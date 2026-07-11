@@ -51,5 +51,5 @@ coverage/
 .nyc_output/
 
 # LaunchD/Systemd
-~/Library/LaunchAgents/com.jobsearch.agent.plist
-/etc/systemd/system/job-search-agent.service
+~/Library/LaunchAgents/com.searchparty.agent.plist
+/etc/systemd/system/search-party.service

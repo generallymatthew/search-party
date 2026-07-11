@@ -1,6 +1,6 @@
-# 🔍 JobRadar — Automated UX Design Job Search Agent
+# 🔍 Search Party — Automated Job Search Agent
 
-> An intelligent, self-updating job search agent that finds UX Design positions, ranks them by your skills, and keeps you notified. Set it and forget it.
+> An intelligent, self-updating job search agent that finds positions matching your career, ranks them by your skills, and keeps you notified. Set it and forget it.
 
 **Status**: Production-ready · **License**: MIT · **Node**: 18+ 
 
@@ -25,8 +25,8 @@
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/job-radar.git
-cd job-radar
+git clone https://github.com/generallymatthew/search-party.git
+cd search-party
 npm install
 npx playwright install
 ```
@@ -60,9 +60,9 @@ See [Deployment Guide](#deployment) for Linux/Windows.
 Edit `.env`:
 
 ```env
-# Job search
-JOB_TITLE=UX Designer
-SEARCH_LOCATIONS=remote,Raleigh NC,Durham NC,Chapel Hill NC
+# Job search (customize for any role/location)
+JOB_TITLE=Software Engineer
+SEARCH_LOCATIONS=remote,San Francisco CA,New York NY
 NOTIFY_FREQUENCY=daily  # daily or weekly
 
 # Server
@@ -119,7 +119,7 @@ curl -X POST http://localhost:9090/api/search/now
 ## 🏗️ Architecture
 
 ```
-JobRadar/
+search-party/
 ├── src/
 │   ├── scrapers/          # Job board scrapers (LinkedIn, RemoteOK, etc.)
 │   ├── db/                # SQLite schema & queries
@@ -233,8 +233,8 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md).
 ### Docker
 
 ```bash
-docker build -t jobradad .
-docker run -d -p 9090:9090 -v jobdata:/app/data jobradad
+docker build -t search-party .
+docker run -d -p 9090:9090 -v jobdata:/app/data search-party
 ```
 
 See [Docker Guide](docs/DOCKER.md) for details.
@@ -243,7 +243,7 @@ See [Docker Guide](docs/DOCKER.md) for details.
 
 ### Web Scraping & Terms of Service
 
-JobRadar scrapes publicly available job listings. Please note:
+Search Party scrapes publicly available job listings. Please note:
 
 - **LinkedIn**: Uses Playwright with standard browser identification. LinkedIn's ToS restricts automated access. Use at your own risk.
 - **RemoteOK**: Allows scraping with responsible delays.
@@ -306,16 +306,20 @@ MIT © 2024 — Free for personal and commercial use.
 
 ## 💬 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/job-radar/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/job-radar/discussions)
+- **Issues**: [GitHub Issues](https://github.com/generallymatthew/search-party/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/generallymatthew/search-party/discussions)
 - **Email**: your-email@example.com
 
 ## 🎯 Use Cases
 
-- 🔍 **Job Seekers** — Automated notifications of new opportunities
-- 📊 **Career Researchers** — Track salary trends and hiring patterns
-- 👨‍💻 **Developers** — Fork and customize for different roles/regions
-- 🏢 **Recruiters** — Adapt for passive candidate sourcing
+- 🔍 **Software Engineers** — Find dev roles matching your stack and experience level
+- 🎨 **Designers** — Discover UX/Product/Graphic design positions
+- 📊 **Data Professionals** — Search for data science, analytics, and ML roles
+- 💼 **Product Managers** — Find PM and APM opportunities
+- 🏢 **Job Seekers of Any Role** — Customize for your career: DevOps, QA, Marketing, Sales, etc.
+- 👁️ **Career Researchers** — Track salary trends and hiring patterns across industries
+- 🤖 **Developers** — Fork and customize for any role/industry/region combination
+- 🏪 **Recruiters** — Adapt for passive candidate sourcing and market research
 
 ---
 

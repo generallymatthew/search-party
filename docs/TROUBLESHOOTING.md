@@ -313,7 +313,7 @@ JavaScript heap out of memory
 
 2. **Resume format**
    - Paste plain text only
-   - Should include keywords (UX, design, strategy, etc.)
+   - Should include relevant keywords matching your field (technical skills, domain expertise, etc.)
 
 3. **Re-upload resume**
    - Dashboard → Upload & Analyze Resume
@@ -329,13 +329,13 @@ JavaScript heap out of memory
 
 ## Getting Help
 
-1. **Check existing issues**: https://github.com/yourusername/job-radar/issues
+1. **Check existing issues**: https://github.com/generallymatthew/search-party/issues
 2. **Search this guide** for similar problems
 3. **Open new issue** if not found:
    - Include error message/logs
    - Describe what you were doing
    - Include environment (OS, Node version)
-4. **Join discussions**: https://github.com/yourusername/job-radar/discussions
+4. **Join discussions**: https://github.com/generallymatthew/search-party/discussions
 
 ---
 
@@ -348,7 +348,7 @@ For detailed logging:
 DEBUG=* npm run dev
 
 # Or in .env
-DEBUG=jobradad:*
+DEBUG=search-party:*
 ```
 
 This will output detailed logs to help diagnose issues.

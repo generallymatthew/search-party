@@ -1,7 +1,7 @@
 {
-  "name": "job-search-agent",
-  "version": "0.1.0",
-  "description": "Scheduled job search agent for UX Design roles",
+  "name": "search-party",
+  "version": "1.0.0",
+  "description": "Automated job search agent that scrapes multiple job boards, ranks jobs by your skills, and sends daily updates",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node src/server.ts",

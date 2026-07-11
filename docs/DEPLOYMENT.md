@@ -44,17 +44,17 @@ bash manage-service.sh uninstall
 
 ### Manual Setup
 
-Create `/etc/systemd/system/job-radar.service`:
+Create `/etc/systemd/system/search-party.service`:
 
 ```ini
 [Unit]
-Description=JobRadar - Automated Job Search Agent
+Description=Search Party - Automated Job Search Agent
 After=network.target
 
 [Service]
 Type=simple
 User=your-username
-WorkingDirectory=/home/your-username/job-radar
+WorkingDirectory=/home/your-username/search-party
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=30
@@ -67,14 +67,14 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable job-radar
-sudo systemctl start job-radar
+sudo systemctl enable search-party
+sudo systemctl start search-party
 
 # Check status
-sudo systemctl status job-radar
+sudo systemctl status search-party
 
 # View logs
-sudo journalctl -u job-radar -f
+sudo journalctl -u search-party -f
 ```
 
 ---
@@ -84,7 +84,7 @@ sudo journalctl -u job-radar -f
 ### Build Image
 
 ```bash
-docker build -t job-radar:latest .
+docker build -t search-party:latest .
 ```
 
 ### Run Container
@@ -92,26 +92,26 @@ docker build -t job-radar:latest .
 ```bash
 # With named volume for data persistence
 docker run -d \
-  --name job-radar \
+  --name search-party \
   -p 9090:9090 \
   -v jobdata:/app/data \
-  job-radar:latest
+  search-party:latest
 ```
 
 ### Management
 
 ```bash
 # View logs
-docker logs -f job-radar
+docker logs -f search-party
 
 # Stop container
-docker stop job-radar
+docker stop search-party
 
 # Start container
-docker start job-radar
+docker start search-party
 
 # Remove container
-docker rm job-radar
+docker rm search-party
 ```
 
 ### Docker Compose
@@ -122,9 +122,9 @@ Create `docker-compose.yml`:
 version: '3.8'
 
 services:
-  job-radar:
+  search-party:
     build: .
-    container_name: job-radar
+    container_name: search-party
     ports:
       - "9090:9090"
     volumes:
@@ -158,9 +158,9 @@ NODE_ENV=production
 PORT=9090
 DB_PATH=./data/jobs.db
 
-# Job Search
-JOB_TITLE=UX Designer
-SEARCH_LOCATIONS=remote,Raleigh NC,Durham NC,Chapel Hill NC
+# Job Search (customize for your role and locations)
+JOB_TITLE=Software Engineer
+SEARCH_LOCATIONS=remote,San Francisco CA,New York NY
 NOTIFY_FREQUENCY=daily
 
 # Email Notifications (optional)

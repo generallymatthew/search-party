@@ -1,4 +1,4 @@
-# Contributing to JobRadar
+# Contributing to Search Party
 
 Thanks for your interest in contributing! Here's how you can help.
 
@@ -7,7 +7,7 @@ Thanks for your interest in contributing! Here's how you can help.
 Found a bug or broken scraper? 
 
 **Before submitting:**
-1. Check if it's already reported in [Issues](https://github.com/yourusername/job-radar/issues)
+1. Check if it's already reported in [Issues](https://github.com/generallymatthew/search-party/issues)
 2. Run `bash manage-service.sh logs` to check error logs
 3. Note which job board is affected (if applicable)
 
@@ -292,8 +292,8 @@ How to verify this works?
 ## ❓ Questions?
 
 - **How do I...?** Check [README.md](README.md) first
-- **Found a bug?** Open an [Issue](https://github.com/yourusername/job-radar/issues)
-- **Have an idea?** Open a [Discussion](https://github.com/yourusername/job-radar/discussions)
+- **Found a bug?** Open an [Issue](https://github.com/generallymatthew/search-party/issues)
+- **Have an idea?** Open a [Discussion](https://github.com/generallymatthew/search-party/discussions)
 
 ---
 
