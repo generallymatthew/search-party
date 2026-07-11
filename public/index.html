@@ -81,7 +81,7 @@
     </header>
 
     <div class="controls">
-      <button onclick="searchNow()">🔄 Search Now</button>
+      <button onclick="searchNow()">Search Now</button>
       <span id="lastSearch" style="color: #666; font-size: 14px;"></span>
 
       <div class="filter-section" style="margin-left: auto;">
@@ -297,7 +297,7 @@
     async function searchNow() {
       try {
         document.querySelector('button').disabled = true
-        document.querySelector('button').textContent = '🔄 Searching...'
+        document.querySelector('button').textContent = 'Searching...'
 
         const response = await fetch('/api/search/now', { method: 'POST' })
         const result = await response.json()
@@ -306,13 +306,13 @@
           setTimeout(() => {
             loadJobs()
             document.querySelector('button').disabled = false
-            document.querySelector('button').textContent = '🔄 Search Now'
+            document.querySelector('button').textContent = 'Search Now'
           }, 3000)
         }
       } catch (error) {
         showError('Search failed: ' + error.message)
         document.querySelector('button').disabled = false
-        document.querySelector('button').textContent = '🔄 Search Now'
+        document.querySelector('button').textContent = 'Search Now'
       }
     }
 
