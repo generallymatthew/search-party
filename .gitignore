@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+*.js
+!src/**/*.js
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary
+.cache/
+.tmp/
+tmp/
+*.tmp
+
+# Browser dependencies
+.playwright/
+chrome-data/
+
+# Testing
+coverage/
+.nyc_output/
+
+# LaunchD/Systemd
+~/Library/LaunchAgents/com.jobsearch.agent.plist
+/etc/systemd/system/job-search-agent.service

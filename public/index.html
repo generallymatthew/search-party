@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Search Agent</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    header { background: #fff; border-bottom: 1px solid #ddd; padding: 40px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; }
+    header h1 { font-size: 28px; margin-bottom: 10px; }
+    header p { color: #666; font-size: 14px; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; }
+    .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-close { font-size: 24px; cursor: pointer; background: none; border: none; color: #999; }
+    .modal-close:hover { color: #333; }
+
+    .controls { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .controls button { background: #0a66c2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .controls button:hover { background: #085a9f; }
+    .controls input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+    .filter-section { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+    .filter-label { font-size: 13px; color: #666; font-weight: 600; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #0a66c2; }
+    .stat-number { font-size: 32px; font-weight: bold; color: #0a66c2; }
+    .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
+
+    .jobs-container { }
+    .job-card { background: #fff; padding: 20px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; transition: box-shadow 0.2s; }
+    .job-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+    .job-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+    .job-title { font-size: 18px; font-weight: bold; color: #0a66c2; }
+    .job-source { font-size: 12px; background: #f0f0f0; padding: 4px 8px; border-radius: 3px; }
+
+    .job-company { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 5px; }
+    .job-meta { font-size: 14px; color: #666; margin-bottom: 10px; }
+    .job-meta span { margin-right: 20px; }
+
+    .job-salary { color: #27ae60; font-weight: 600; margin-top: 10px; }
+
+    .job-actions { margin-top: 15px; display: flex; gap: 10px; }
+    .job-actions a { display: inline-block; background: #0a66c2; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
+    .job-actions a:hover { background: #085a9f; }
+
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .status-saved { background: #e3f2fd; color: #0a66c2; }
+    .status-applied { background: #e8f5e9; color: #27ae60; }
+
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+
+    @media (max-width: 768px) {
+      .controls { flex-direction: column; }
+      .stats { grid-template-columns: 1fr; }
+      .job-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>UX Design Job Search</h1>
+        <p>Finding UX Designer positions in Triangle NC and Remote</p>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="openSettingsModal()" style="background: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">⚙️ Settings</button>
+        <button onclick="openJobBoardsModal()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">🔍 Job Boards</button>
+        <button onclick="openResumeModal()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">📄 Upload & Analyze Resume</button>
+      </div>
+    </header>
+
+    <div class="controls">
+      <button onclick="searchNow()">🔄 Search Now</button>
+      <span id="lastSearch" style="color: #666; font-size: 14px;"></span>
+
+      <div class="filter-section" style="margin-left: auto;">
+        <div class="filter-label">Minimum Match Score:</div>
+        <input type="range" id="matchScoreFilter" min="0" max="100" value="0" style="width: 150px;" onchange="filterJobs()">
+        <span id="matchScoreValue" style="font-size: 13px; color: #666; min-width: 40px;">0%</span>
+
+        <button onclick="toggleHideLowMatches()" id="toggleHideBtn" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 12px;">Hide Low Matches</button>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          ⚙️ Search Settings
+          <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+        </div>
+        <div style="display: grid; gap: 15px;">
+          <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Job Title to Search</label>
+            <input type="text" id="jobTitleInput" value="UX Designer" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Search Locations (comma-separated)</label>
+            <input type="text" id="locationsInput" value="remote, Raleigh NC, Durham NC, Chapel Hill NC" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Search Frequency</label>
+            <select id="frequencyInput" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+              <option value="daily">Daily (8 AM)</option>
+              <option value="weekly">Weekly (Monday 9 AM)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Minimum Match Score to Show (%)</label>
+            <input type="number" id="minMatchScoreInput" min="0" max="100" value="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+          </div>
+
+          <button onclick="saveSettings()" style="background: #27ae60; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px;">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Job Boards Modal -->
+    <div id="jobBoardsModal" class="modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          🔍 Job Boards We're Searching
+          <button class="modal-close" onclick="closeJobBoardsModal()">✕</button>
+        </div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">We automatically search these job boards daily for UX Design positions in Triangle NC and remote locations.</p>
+        <div id="jobBoardsList" style="display: grid; gap: 12px;">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Resume Upload Modal -->
+    <div id="resumeModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          📄 Upload Resume
+          <button class="modal-close" onclick="closeResumeModal()">✕</button>
+        </div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Upload your resume to see job matches ranked by compatibility with your skills and experience.</p>
+        <textarea id="resumeText" style="width: 100%; height: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: monospace; font-size: 12px; resize: vertical;" placeholder="Paste your resume text here..."></textarea>
+        <button onclick="uploadResume()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: 600;">Upload & Analyze</button>
+        <span id="resumeStatus" style="margin-left: 15px; color: #666; font-size: 14px;"></span>
+      </div>
+    </div>
+
+    <div id="error" style="display: none;" class="error"></div>
+
+    <div id="stats" class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="statTotal">0</div>
+        <div class="stat-label">Total Jobs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="statApplied">0</div>
+        <div class="stat-label">Applications</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="statGlassdoor">0</div>
+        <div class="stat-label">From Glassdoor</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="statLinkedIn">0</div>
+        <div class="stat-label">From LinkedIn</div>
+      </div>
+    </div>
+
+    <div id="jobs" class="jobs-container">
+      <div class="loading">Loading jobs...</div>
+    </div>
+  </div>
+
+  <script>
+    let currentJobs = []
+    let minMatchScoreFilter = 0
+    let hideLowMatches = false
+
+    async function loadJobs() {
+      try {
+        const response = await fetch('/api/jobs?limit=200&offset=0')
+        currentJobs = await response.json()
+        renderJobs()
+        loadStats()
+        loadConfig()
+      } catch (error) {
+        showError('Failed to load jobs: ' + error.message)
+      }
+    }
+
+    function renderJobs() {
+      const container = document.getElementById('jobs')
+
+      // Apply filters
+      let filteredJobs = currentJobs.filter(job => {
+        const matchScore = job.match_score || 0
+        return matchScore >= minMatchScoreFilter
+      })
+
+      if (filteredJobs.length === 0) {
+        container.innerHTML = `<div class="loading">No jobs match your criteria. Try lowering the match score filter.</div>`
+        return
+      }
+
+      container.innerHTML = filteredJobs.map(job => {
+        const matchScore = job.match_score || 0
+        const matchColor = matchScore >= 80 ? '#27ae60' : matchScore >= 60 ? '#f39c12' : matchScore >= 40 ? '#e67e22' : '#95a5a6'
+        const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good' : matchScore >= 40 ? 'Fair' : 'New Job'
+        const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
+
+        return `
+          <div class="job-card">
+            <div class="job-header">
+              <div>
+                <div class="job-title">${escapeHtml(job.title)}</div>
+                <div class="job-company">${escapeHtml(job.company)}</div>
+              </div>
+              <div style="text-align: right;">
+                ${matchScore > 0 ? `
+                  <div style="background: ${matchColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 5px;">
+                    ${matchScore}% Match
+                  </div>
+                ` : ''}
+                <span class="job-source">${job.source.toUpperCase()}</span>
+              </div>
+            </div>
+
+            <div class="job-meta">
+              <span>📍 ${escapeHtml(job.location)}</span>
+              ${job.posted_date ? `<span>📅 ${new Date(job.posted_date * 1000).toLocaleDateString()}</span>` : ''}
+            </div>
+
+            ${job.salary_min ? `<div class="job-salary">💰 $${(job.salary_min/1000).toFixed(0)}k - $${(job.salary_max/1000).toFixed(0)}k</div>` : ''}
+
+            ${matchReasons.length > 0 ? `
+              <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 12px; color: #666;">
+                <strong>Why it matches:</strong><br>
+                ${matchReasons.map(r => `• ${r}`).join('<br>')}
+              </div>
+            ` : ''}
+
+            <div class="job-actions">
+              <a href="${escapeHtml(job.url)}" target="_blank">View Job</a>
+              <button onclick="markApplied(${job.id})" style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+                ${job.application_status === 'applied' ? '✓ Applied' : 'Mark Applied'}
+              </button>
+            </div>
+          </div>
+        `
+      }).join('')
+    }
+
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/stats')
+        const stats = await response.json()
+
+        document.getElementById('statTotal').textContent = stats.totalJobs
+        document.getElementById('statApplied').textContent = stats.applied
+
+        const glassdoor = stats.bySource.find(s => s.source === 'glassdoor')
+        const linkedin = stats.bySource.find(s => s.source === 'linkedin')
+
+        document.getElementById('statGlassdoor').textContent = glassdoor?.count || 0
+        document.getElementById('statLinkedIn').textContent = linkedin?.count || 0
+      } catch (error) {
+        console.error('Failed to load stats:', error)
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/config')
+        const config = await response.json()
+
+        if (config.lastSearch) {
+          const date = new Date(config.lastSearch)
+          document.getElementById('lastSearch').textContent = `Last search: ${date.toLocaleString()}`
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error)
+      }
+    }
+
+    async function searchNow() {
+      try {
+        document.querySelector('button').disabled = true
+        document.querySelector('button').textContent = '🔄 Searching...'
+
+        const response = await fetch('/api/search/now', { method: 'POST' })
+        const result = await response.json()
+
+        if (result.success) {
+          setTimeout(() => {
+            loadJobs()
+            document.querySelector('button').disabled = false
+            document.querySelector('button').textContent = '🔄 Search Now'
+          }, 3000)
+        }
+      } catch (error) {
+        showError('Search failed: ' + error.message)
+        document.querySelector('button').disabled = false
+        document.querySelector('button').textContent = '🔄 Search Now'
+      }
+    }
+
+    async function markApplied(jobId) {
+      try {
+        await fetch(`/api/jobs/${jobId}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'applied' })
+        })
+        loadJobs()
+      } catch (error) {
+        showError('Failed to update: ' + error.message)
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('error')
+      errorDiv.textContent = message
+      errorDiv.style.display = 'block'
+      setTimeout(() => { errorDiv.style.display = 'none' }, 5000)
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div')
+      div.textContent = text
+      return div.innerHTML
+    }
+
+    function openResumeModal() {
+      document.getElementById('resumeModal').classList.add('active')
+    }
+
+    function closeResumeModal() {
+      document.getElementById('resumeModal').classList.remove('active')
+    }
+
+    function openJobBoardsModal() {
+      document.getElementById('jobBoardsModal').classList.add('active')
+      loadJobBoardStats()
+    }
+
+    function closeJobBoardsModal() {
+      document.getElementById('jobBoardsModal').classList.remove('active')
+    }
+
+    function openSettingsModal() {
+      document.getElementById('settingsModal').classList.add('active')
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('active')
+    }
+
+    function saveSettings() {
+      const jobTitle = document.getElementById('jobTitleInput').value
+      const locations = document.getElementById('locationsInput').value
+      const frequency = document.getElementById('frequencyInput').value
+      const minScore = parseInt(document.getElementById('minMatchScoreInput').value) || 0
+
+      // Save to localStorage
+      localStorage.setItem('jobTitle', jobTitle)
+      localStorage.setItem('locations', locations)
+      localStorage.setItem('frequency', frequency)
+      localStorage.setItem('minMatchScore', minScore)
+
+      minMatchScoreFilter = minScore
+      closeSettingsModal()
+      showError('✅ Settings saved! Search parameters updated.')
+      filterJobs()
+    }
+
+    function toggleHideLowMatches() {
+      hideLowMatches = !hideLowMatches
+      const btn = document.getElementById('toggleHideBtn')
+      btn.textContent = hideLowMatches ? '✓ Hiding Low Matches' : 'Hide Low Matches'
+      btn.style.background = hideLowMatches ? '#27ae60' : '#e74c3c'
+      filterJobs()
+    }
+
+    function filterJobs() {
+      const scoreSlider = document.getElementById('matchScoreFilter')
+      minMatchScoreFilter = parseInt(scoreSlider.value)
+      document.getElementById('matchScoreValue').textContent = minMatchScoreFilter + '%'
+
+      renderJobs()
+    }
+
+    async function loadJobBoardStats() {
+      const boards = [
+        { name: 'LinkedIn', emoji: '💼', url: 'linkedin.com', source: 'linkedin' },
+        { name: 'RemoteOK', emoji: '✅', url: 'remoteok.com', source: 'remoteok' },
+        { name: 'We Work Remotely', emoji: '🌐', url: 'weworkremotely.com', source: 'weworkremotely' },
+        { name: 'Dribbble', emoji: '🎨', url: 'dribbble.com', source: 'dribbble' },
+        { name: 'AngelList', emoji: '⭐', url: 'wellfound.com', source: 'angellist' },
+        { name: 'Authentic Jobs', emoji: '🎯', url: 'authenticjobs.com', source: 'authenticjobs' },
+        { name: 'Glassdoor', emoji: '💼', url: 'glassdoor.com', source: 'glassdoor' }
+      ]
+
+      try {
+        const response = await fetch('/api/stats')
+        const stats = await response.json()
+
+        const boardStats = {}
+        boards.forEach(b => boardStats[b.source] = 0)
+
+        // Count jobs by source from API stats
+        stats.bySource.forEach(stat => {
+          if (boardStats.hasOwnProperty(stat.source)) {
+            boardStats[stat.source] = stat.count
+          }
+        })
+
+        const html = boards.map(board => {
+          const count = boardStats[board.source] || 0
+          const hasJobs = count > 0
+          return `
+            <div style="background: ${hasJobs ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${hasJobs ? '#27ae60' : '#ccc'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 600; font-size: 15px;">${board.emoji} ${board.name}</div>
+                  <div style="font-size: 12px; color: #666; margin-top: 4px;">${board.url}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 20px; font-weight: bold; color: ${hasJobs ? '#27ae60' : '#999'};">${count}</div>
+                  <div style="font-size: 11px; color: #999;">job${count !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+            </div>
+          `
+        }).join('')
+
+        document.getElementById('jobBoardsList').innerHTML = html
+      } catch (error) {
+        console.error('Failed to load board stats:', error)
+      }
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('DOMContentLoaded', () => {
+      const resumeModal = document.getElementById('resumeModal')
+      const boardsModal = document.getElementById('jobBoardsModal')
+      const settingsModal = document.getElementById('settingsModal')
+
+      resumeModal.addEventListener('click', (e) => {
+        if (e.target === resumeModal) closeResumeModal()
+      })
+
+      boardsModal.addEventListener('click', (e) => {
+        if (e.target === boardsModal) closeJobBoardsModal()
+      })
+
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) closeSettingsModal()
+      })
+
+      // Load saved settings
+      const savedMinScore = localStorage.getItem('minMatchScore')
+      if (savedMinScore) {
+        minMatchScoreFilter = parseInt(savedMinScore)
+        document.getElementById('matchScoreFilter').value = minMatchScoreFilter
+        document.getElementById('matchScoreValue').textContent = minMatchScoreFilter + '%'
+      }
+    })
+
+    async function uploadResume() {
+      const resumeText = document.getElementById('resumeText').value.trim()
+      if (!resumeText) {
+        showError('Please paste your resume text')
+        return
+      }
+
+      try {
+        const statusEl = document.getElementById('resumeStatus')
+        statusEl.textContent = '⏳ Analyzing...'
+
+        const response = await fetch('/api/resume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: resumeText
+        })
+
+        const result = await response.json()
+
+        if (result.success) {
+          statusEl.textContent = `✅ Resume analyzed! ${result.message}`
+          document.getElementById('resumeText').value = ''
+          setTimeout(() => {
+            closeResumeModal()
+            loadJobs() // Reload with match scores
+          }, 1500)
+        } else {
+          showError('Failed to upload resume: ' + result.error)
+        }
+      } catch (error) {
+        showError('Resume upload failed: ' + error.message)
+      }
+    }
+
+    // Load on page load
+    loadJobs()
+    setInterval(loadJobs, 60000) // Refresh every minute
+  </script>
+</body>
+</html>
