@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .search-circle { fill: none; stroke: #0a66c2; stroke-width: 6; }
+      .search-handle { fill: none; stroke: #0a66c2; stroke-width: 6; stroke-linecap: round; }
+    </style>
+  </defs>
+  <!-- Magnifying glass circle -->
+  <circle class="search-circle" cx="38" cy="38" r="28"/>
+  <!-- Magnifying glass handle -->
+  <line class="search-handle" x1="58" y1="58" x2="82" y2="82"/>
+</svg>
