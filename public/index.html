@@ -29,6 +29,42 @@
     .filter-section { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
     .filter-label { font-size: 13px; color: #666; font-weight: 600; }
 
+    input[type="range"] {
+      width: 150px;
+      height: 5px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #0a66c2 0%, #0a66c2 var(--value), #e0e0e0 var(--value), #e0e0e0 100%);
+      outline: none;
+      -webkit-appearance: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0a66c2;
+      cursor: pointer;
+      border: none;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0a66c2;
+      cursor: pointer;
+      border: none;
+    }
+
+    input[type="range"]::-moz-range-track {
+      background: transparent;
+      border: none;
+    }
+
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
     .stat-card { background: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #0a66c2; }
     .stat-number { font-size: 32px; font-weight: bold; color: #0a66c2; }
@@ -161,20 +197,28 @@
 
     <div id="stats" class="stats">
       <div class="stat-card">
-        <div class="stat-number" id="statTotal">0</div>
-        <div class="stat-label">Total Jobs</div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div class="stat-number" id="statTotal">0</div>
+            <div class="stat-label">Total Jobs</div>
+          </div>
+          <div style="text-align: right; font-size: 12px; color: #999;">
+            <div id="statHidden" style="font-size: 16px; color: #e74c3c;">0</div>
+            <div>hidden</div>
+          </div>
+        </div>
       </div>
       <div class="stat-card">
         <div class="stat-number" id="statApplied">0</div>
         <div class="stat-label">Applications</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="statGlassdoor">0</div>
-        <div class="stat-label">From Glassdoor</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-number" id="statLinkedIn">0</div>
         <div class="stat-label">From LinkedIn</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="statRemoteOK">0</div>
+        <div class="stat-label">From RemoteOK</div>
       </div>
     </div>
 
@@ -190,10 +234,10 @@
 
     async function loadJobs() {
       try {
-        const response = await fetch('/api/jobs?limit=200&offset=0')
+        const response = await fetch('/api/jobs?limit=1000&offset=0')
         currentJobs = await response.json()
         renderJobs()
-        loadStats()
+        // Stats are now calculated in renderJobs() to account for designer filter
         loadConfig()
       } catch (error) {
         showError('Failed to load jobs: ' + error.message)
@@ -203,28 +247,105 @@
     function renderJobs() {
       const container = document.getElementById('jobs')
 
-      // Apply filters
+      // Get user's search locations
+      const locationsStr = localStorage.getItem('locations') || 'remote, Raleigh NC, Durham NC, Chapel Hill NC'
+      const userLocations = locationsStr.split(',').map(loc => loc.trim().toLowerCase())
+
+      // Helper function to check if job location matches user's locations
+      function matchesUserLocation(jobLocation) {
+        const jobLoc = jobLocation.toLowerCase().replace(/,/g, '')
+        return userLocations.some(userLoc => {
+          if (userLoc === 'remote') {
+            return jobLoc.includes('remote')
+          }
+          // Remove commas and check if location contains the user's location
+          const normalizedUserLoc = userLoc.replace(/,/g, '')
+          return jobLoc.includes(normalizedUserLoc)
+        })
+      }
+
+      // Helper function to check if job title or company is ANY type of designer role
+      function isDesignerRole(job) {
+        const titleLower = job.title.toLowerCase()
+        const companyLower = job.company.toLowerCase()
+        const designerKeywords = ['designer', 'design', 'ux', 'ui', 'experience', 'product design', 'interaction']
+        return designerKeywords.some(keyword => titleLower.includes(keyword) || companyLower.includes(keyword))
+      }
+
+      // Helper function to check if job title is a true UX/Experience Designer role
+      function isUXDesignerRole(title) {
+        const titleLower = title.toLowerCase()
+        const uxKeywords = ['ux designer', 'experience designer', 'user experience', 'ux/ui', 'interaction designer', 'user experience designer']
+        return uxKeywords.some(keyword => titleLower.includes(keyword))
+      }
+
+      // Apply filters - match score, location, AND must be a designer role
       let filteredJobs = currentJobs.filter(job => {
         const matchScore = job.match_score || 0
-        return matchScore >= minMatchScoreFilter
+        const hasMatchScore = matchScore >= minMatchScoreFilter
+        const hasMatchingLocation = matchesUserLocation(job.location)
+        const isDesigner = isDesignerRole(job)
+        return hasMatchScore && hasMatchingLocation && isDesigner
       })
+
+      // Adjust match scores for non-UX Designer roles and sort
+      filteredJobs = filteredJobs.map(job => ({
+        ...job,
+        originalMatchScore: job.match_score,
+        isUXRole: isUXDesignerRole(job.title),
+        adjustedMatchScore: isUXDesignerRole(job.title) ? job.match_score : Math.max(0, (job.match_score || 0) - 20)
+      }))
+
+      // Sort: UX Designer roles first, then by adjusted match score descending
+      filteredJobs.sort((a, b) => {
+        if (a.isUXRole !== b.isUXRole) {
+          return a.isUXRole ? -1 : 1
+        }
+        return b.adjustedMatchScore - a.adjustedMatchScore
+      })
+
+      // Update stats based on filtered jobs (designer jobs only)
+      const designerJobs = currentJobs.filter(job => isDesignerRole(job))
+      const hiddenByDesignerFilter = currentJobs.length - designerJobs.length
+      const hiddenByMatchScore = designerJobs.length - filteredJobs.length
+      const totalHidden = hiddenByDesignerFilter + hiddenByMatchScore
+
+      document.getElementById('statTotal').textContent = filteredJobs.length
+      document.getElementById('statHidden').textContent = totalHidden
+
+      // Update source counts (from filtered designer jobs)
+      const filteredLinkedIn = filteredJobs.filter(j => j.source === 'linkedin').length
+      const filteredRemoteOK = filteredJobs.filter(j => j.source === 'remoteok').length
+
+      document.getElementById('statLinkedIn').textContent = filteredLinkedIn
+      document.getElementById('statRemoteOK').textContent = filteredRemoteOK
 
       if (filteredJobs.length === 0) {
         container.innerHTML = `<div class="loading">No jobs match your criteria. Try lowering the match score filter.</div>`
         return
       }
 
-      container.innerHTML = filteredJobs.map(job => {
-        const matchScore = job.match_score || 0
+      // Separate jobs into three categories
+      const appliedJobs = filteredJobs.filter(j => j.application_status === 'applied')
+      const notAGoodFitJobs = filteredJobs.filter(j => j.application_status === 'rejected')
+      const notAppliedJobs = filteredJobs.filter(j => j.application_status !== 'applied' && j.application_status !== 'rejected')
+
+      // Sort applied and not a good fit jobs by most recent (using updated_at or created_at)
+      appliedJobs.sort((a, b) => (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0))
+      notAGoodFitJobs.sort((a, b) => (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0))
+
+      const renderJobCard = (job) => {
+        const matchScore = job.adjustedMatchScore !== undefined ? job.adjustedMatchScore : (job.match_score || 0)
         const matchColor = matchScore >= 80 ? '#27ae60' : matchScore >= 60 ? '#f39c12' : matchScore >= 40 ? '#e67e22' : '#95a5a6'
         const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good' : matchScore >= 40 ? 'Fair' : 'New Job'
         const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
+        const nonUXIndicator = job.isUXRole === false ? '<span style="background: #95a5a6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Other Designer Role</span>' : ''
 
         return `
           <div class="job-card">
             <div class="job-header">
               <div>
-                <div class="job-title">${escapeHtml(job.title)}</div>
+                <div class="job-title">${escapeHtml(job.title)}${nonUXIndicator}</div>
                 <div class="job-company">${escapeHtml(job.company)}</div>
               </div>
               <div style="text-align: right;">
@@ -256,10 +377,52 @@
               <button onclick="markApplied(${job.id})" style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
                 ${job.application_status === 'applied' ? '✓ Applied' : 'Mark Applied'}
               </button>
+              ${job.application_status !== 'applied' ? `
+                <button onclick="markNotAGoodFit(${job.id})" style="background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+                  Not a Good Fit
+                </button>
+              ` : ''}
             </div>
           </div>
         `
-      }).join('')
+      }
+
+      let html = notAppliedJobs.map(renderJobCard).join('')
+
+      if (appliedJobs.length > 0) {
+        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+          <h2 style="font-size: 20px; font-weight: bold; color: #27ae60; margin-bottom: 20px;">✓ Jobs Applied For</h2>
+          ${appliedJobs.map(renderJobCard).join('')}
+        </div>`
+      }
+
+      if (notAGoodFitJobs.length > 0) {
+        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+          <h2 style="font-size: 20px; font-weight: bold; color: #e74c3c; margin-bottom: 20px;">✗ Not a Good Fit</h2>
+          ${notAGoodFitJobs.map(renderJobCard).join('')}
+        </div>`
+      }
+
+      // Show hidden non-designer jobs
+      const hiddenJobs = currentJobs.filter(job => !isDesignerRole(job))
+      if (hiddenJobs.length > 0) {
+        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #95a5a6;">
+          <h2 style="font-size: 20px; font-weight: bold; color: #7f8c8d; margin-bottom: 10px;">🔍 Hidden - Not Designer Roles (${hiddenJobs.length})</h2>
+          <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">These jobs don't match designer keywords. Showing in case they're interesting to you.</p>
+          <div style="display: grid; gap: 15px;">
+            ${hiddenJobs.slice(0, 20).map(job => `
+              <div style="padding: 12px; background: #ecf0f1; border-left: 4px solid #95a5a6; border-radius: 4px;">
+                <div style="font-weight: 600; color: #2c3e50;">${escapeHtml(job.title)}</div>
+                <div style="font-size: 13px; color: #7f8c8d;">${escapeHtml(job.company)} • ${escapeHtml(job.location)}</div>
+                ${job.match_score > 0 ? `<div style="font-size: 13px; color: #95a5a6; margin-top: 4px;">${job.match_score}% Match</div>` : ''}
+              </div>
+            `).join('')}
+            ${hiddenJobs.length > 20 ? `<div style="padding: 12px; text-align: center; color: #7f8c8d; font-size: 13px;">... and ${hiddenJobs.length - 20} more</div>` : ''}
+          </div>
+        </div>`
+      }
+
+      container.innerHTML = html
     }
 
     async function loadStats() {
@@ -270,10 +433,10 @@
         document.getElementById('statTotal').textContent = stats.totalJobs
         document.getElementById('statApplied').textContent = stats.applied
 
-        const glassdoor = stats.bySource.find(s => s.source === 'glassdoor')
+        const remoteok = stats.bySource.find(s => s.source === 'remoteok')
         const linkedin = stats.bySource.find(s => s.source === 'linkedin')
 
-        document.getElementById('statGlassdoor').textContent = glassdoor?.count || 0
+        document.getElementById('statRemoteOK').textContent = remoteok?.count || 0
         document.getElementById('statLinkedIn').textContent = linkedin?.count || 0
       } catch (error) {
         console.error('Failed to load stats:', error)
@@ -322,6 +485,19 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'applied' })
+        })
+        loadJobs()
+      } catch (error) {
+        showError('Failed to update: ' + error.message)
+      }
+    }
+
+    async function markNotAGoodFit(jobId) {
+      try {
+        await fetch(`/api/jobs/${jobId}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'rejected' })
         })
         loadJobs()
       } catch (error) {
@@ -397,6 +573,12 @@
       const scoreSlider = document.getElementById('matchScoreFilter')
       minMatchScoreFilter = parseInt(scoreSlider.value)
       document.getElementById('matchScoreValue').textContent = minMatchScoreFilter + '%'
+
+      // Update the slider gradient background, accounting for thumb width
+      // Thumb is ~22px wide, track is 150px, so offset is ~7.3% on each side
+      const thumbOffset = 7.33
+      const adjustedPercentage = thumbOffset + (minMatchScoreFilter / 100) * (100 - thumbOffset * 2)
+      scoreSlider.style.setProperty('--value', adjustedPercentage + '%')
 
       renderJobs()
     }
@@ -476,6 +658,13 @@
         document.getElementById('matchScoreFilter').value = minMatchScoreFilter
         document.getElementById('matchScoreValue').textContent = minMatchScoreFilter + '%'
       }
+
+      // Initialize slider gradient, accounting for thumb width
+      const scoreSlider = document.getElementById('matchScoreFilter')
+      const thumbOffset = 7.33
+      const value = parseInt(scoreSlider.value)
+      const adjustedPercentage = thumbOffset + (value / 100) * (100 - thumbOffset * 2)
+      scoreSlider.style.setProperty('--value', adjustedPercentage + '%')
     })
 
     async function uploadResume() {

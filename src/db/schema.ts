@@ -118,9 +118,13 @@ export function getJobs(
   return db
     .prepare(
       `SELECT j.*,
-              COALESCE(a.status, 'unsaved') as application_status
+              COALESCE(
+                (SELECT status FROM applications
+                 WHERE job_id = j.id
+                 ORDER BY updated_at DESC LIMIT 1),
+                'unsaved'
+              ) as application_status
        FROM jobs j
-       LEFT JOIN applications a ON j.id = a.job_id
        ORDER BY j.posted_date DESC
        LIMIT ? OFFSET ?`
     )
@@ -171,9 +175,13 @@ export function getJobsWithMatches(
   return db
     .prepare(
       `SELECT j.*,
-              COALESCE(a.status, 'unsaved') as application_status
+              COALESCE(
+                (SELECT status FROM applications
+                 WHERE job_id = j.id
+                 ORDER BY updated_at DESC LIMIT 1),
+                'unsaved'
+              ) as application_status
        FROM jobs j
-       LEFT JOIN applications a ON j.id = a.job_id
        WHERE j.created_at > ?
        ORDER BY j.match_score DESC, j.posted_date DESC
        LIMIT ? OFFSET ?`

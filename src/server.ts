@@ -55,9 +55,13 @@ app.get("/api/jobs", (req: Request, res: Response) => {
     jobs = db
       .prepare(
         `SELECT j.*,
-                COALESCE(a.status, 'unsaved') as application_status
+                COALESCE(
+                  (SELECT status FROM applications
+                   WHERE job_id = j.id
+                   ORDER BY updated_at DESC LIMIT 1),
+                  'unsaved'
+                ) as application_status
          FROM jobs j
-         LEFT JOIN applications a ON j.id = a.job_id
          ORDER BY j.match_score DESC, j.posted_date DESC
          LIMIT ? OFFSET ?`
       )
@@ -67,16 +71,39 @@ app.get("/api/jobs", (req: Request, res: Response) => {
     jobs = db
       .prepare(
         `SELECT j.*,
-                COALESCE(a.status, 'unsaved') as application_status
+                COALESCE(
+                  (SELECT status FROM applications
+                   WHERE job_id = j.id
+                   ORDER BY updated_at DESC LIMIT 1),
+                  'unsaved'
+                ) as application_status
          FROM jobs j
-         LEFT JOIN applications a ON j.id = a.job_id
          ORDER BY j.posted_date DESC
          LIMIT ? OFFSET ?`
       )
       .all(limit, offset)
   }
 
-  res.json(jobs)
+  // Deduplicate by title and company, but ALWAYS keep jobs with applications
+  const seen = new Set<string>()
+  const dedupedJobs = jobs.filter(job => {
+    const key = `${job.title.toLowerCase().trim()}|${job.company.toLowerCase().trim()}`
+
+    // ALWAYS keep jobs that have application records (applied, saved, etc.)
+    if (job.application_status && job.application_status !== 'unsaved') {
+      if (!seen.has(key)) {
+        seen.add(key)
+      }
+      return true
+    }
+
+    // For unapplied jobs, only keep the first occurrence
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  res.json(dedupedJobs)
 })
 
 // Get recent jobs
@@ -136,35 +163,69 @@ app.post("/api/jobs/:id/apply", (req: Request, res: Response) => {
 
 // Get stats
 app.get("/api/stats", (req: Request, res: Response) => {
-  const total = db
-    .prepare("SELECT COUNT(*) as count FROM jobs")
-    .get() as any
-
-  const bySource = db
+  // Get all jobs and deduplicate by title and company
+  const allJobs = db
     .prepare(
-      `SELECT source, COUNT(*) as count FROM jobs
-       GROUP BY source`
+      `SELECT j.*, COALESCE(
+        (SELECT status FROM applications
+         WHERE job_id = j.id
+         ORDER BY updated_at DESC LIMIT 1),
+        'unsaved'
+      ) as application_status
+       FROM jobs j
+       ORDER BY j.match_score DESC, j.posted_date DESC`
     )
     .all() as any[]
 
-  const byLocation = db
-    .prepare(
-      `SELECT location, COUNT(*) as count FROM jobs
-       GROUP BY location
-       ORDER BY count DESC
-       LIMIT 10`
-    )
-    .all() as any[]
+  // Deduplicate by title and company, but ALWAYS keep jobs with applications
+  const seen = new Set<string>()
+  const dedupedJobs = allJobs.filter(job => {
+    const key = `${job.title.toLowerCase().trim()}|${job.company.toLowerCase().trim()}`
 
-  const applied = db
-    .prepare("SELECT COUNT(*) as count FROM applications WHERE status = 'applied'")
-    .get() as any
+    // ALWAYS keep jobs that have application records
+    if (job.application_status && job.application_status !== 'unsaved') {
+      if (!seen.has(key)) {
+        seen.add(key)
+      }
+      return true
+    }
+
+    // For unapplied jobs, only keep the first occurrence
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  // Count unique jobs by source
+  const bySource: any = {}
+  dedupedJobs.forEach(job => {
+    bySource[job.source] = (bySource[job.source] || 0) + 1
+  })
+
+  // Count unique jobs by location
+  const byLocation: any = {}
+  dedupedJobs.forEach(job => {
+    byLocation[job.location] = (byLocation[job.location] || 0) + 1
+  })
+
+  // Sort location by count and take top 10
+  const byLocationArray = Object.entries(byLocation)
+    .map(([location, count]) => ({ location, count }))
+    .sort((a: any, b: any) => b.count - a.count)
+    .slice(0, 10)
+
+  // Count applied jobs (from deduplicated jobs)
+  const appliedCount = dedupedJobs.filter(j => j.application_status === 'applied').length
+
+  // Convert bySource object to array
+  const bySourceArray = Object.entries(bySource)
+    .map(([source, count]) => ({ source, count }))
 
   res.json({
-    totalJobs: total.count,
-    applied: applied.count,
-    bySource,
-    byLocation,
+    totalJobs: dedupedJobs.length,
+    applied: appliedCount,
+    bySource: bySourceArray,
+    byLocation: byLocationArray,
   })
 })
 
