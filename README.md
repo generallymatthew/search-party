@@ -6,10 +6,10 @@
 
 ## ✨ Features
 
-- 🤖 **Automated Daily Searches** — Scrapes 7+ job boards automatically
+- 🤖 **Automated Daily Searches** — Scrapes 10+ job boards automatically
 - 🎯 **Resume-Based Ranking** — Matches jobs to your background (0-100% compatibility)
 - 📊 **Smart Filtering** — Hide low-match jobs, customize search criteria
-- 🌐 **Multiple Boards** — LinkedIn (506 jobs), RemoteOK (50+ jobs), and more
+- 🌐 **Multiple Boards** — LinkedIn, UI/UX Jobs Board, Remote Leaf, AIGA, Remotive, and more
 - 📧 **Email Digests** — Daily job summaries sent to your inbox
 - 💾 **Application Tracking** — Track which jobs you've applied to
 - 🎨 **Beautiful Dashboard** — Modern web UI for browsing and filtering
@@ -166,7 +166,10 @@ npm run start
 
 ### Adding a New Job Board
 
-Create `src/scrapers/newboard.ts`:
+Create `src/scrapers/newboard.ts`. If the board is server-rendered, prefer
+`axios` + `cheerio` (see `src/scrapers/uiuxjobsboard.ts`) — it's faster and
+lighter than a browser. Use Playwright when the board needs JavaScript or
+sits behind bot protection (see `src/scrapers/aiga.ts`):
 
 ```typescript
 import { chromium } from "playwright"
@@ -200,20 +203,29 @@ const scrapers = [
 ]
 ```
 
+Finally, add the new source name to the `source` union in `src/types/index.ts`
+and to `JOB_SOURCES` in `src/db/schema.ts` — existing databases migrate
+automatically on next start.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📊 Job Board Support
 
 | Board | Status | Jobs Found | Notes |
 |-------|--------|-----------|-------|
-| LinkedIn | ✅ Active | 506+ | Official access |
-| RemoteOK | ✅ Active | 50+ | Reliable |
+| LinkedIn | ✅ Active | 200+ | Official access |
+| UI/UX Jobs Board | ✅ Active | 100+ | Server-rendered, category pages |
+| Remote Leaf | ✅ Active | 30+ | Public category pages (curated feed is paid) |
+| AIGA Design Careers | ✅ Active | 20+ | Playwright captures the board's JSON API |
+| Remotive | ✅ Active | ~6 | Public tiles + official API (most listings paywalled) |
+| Smashing Magazine | ✅ Active | Few | Board rarely updated |
 | We Work Remotely | ⏳ Needs Fix | 0 | Selector outdated |
 | Dribbble | ⏳ Needs Fix | 0 | Site structure changed |
 | AngelList/Wellfound | ⏳ Needs Fix | 0 | API-only access |
 | Authentic Jobs | ⏳ Needs Fix | 0 | Bot detection |
 | Glassdoor | ⏳ Needs Fix | 0 | Aggressive bot blocking |
 | Indeed | ❌ Disabled | — | Partnership API required |
+| RemoteOK | ❌ Removed | — | Listings moved behind a paywall |
 
 **Want to help fix a board?** See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -246,7 +258,7 @@ See [Docker Guide](docs/DOCKER.md) for details.
 Search Party scrapes publicly available job listings. Please note:
 
 - **LinkedIn**: Uses Playwright with standard browser identification. LinkedIn's ToS restricts automated access. Use at your own risk.
-- **RemoteOK**: Allows scraping with responsible delays.
+- **Remotive**: Uses their official public API, which asks that jobs link back to Remotive and not be reposted to third-party job sites.
 - **Other Sites**: Check individual site ToS before enabling.
 
 This tool is for **personal use only**. Commercial use or large-scale scraping may violate site ToS.
