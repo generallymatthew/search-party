@@ -233,16 +233,21 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="statApplied">0</div>
-        <div class="stat-label">Applications</div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div class="stat-number" id="statApplied">0</div>
+            <div class="stat-label">Applications</div>
+          </div>
+          <div id="statAppStatus" style="text-align: right; font-size: 12px; color: #999;"></div>
+        </div>
       </div>
       <div class="stat-card">
         <div class="stat-number" id="statLinkedIn">0</div>
         <div class="stat-label">From LinkedIn</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="statRemoteOK">0</div>
-        <div class="stat-label">From RemoteOK</div>
+        <div class="stat-number" id="statUIUX">0</div>
+        <div class="stat-label">From UI/UX Jobs Board</div>
       </div>
     </div>
 
@@ -273,6 +278,7 @@
         currentJobs = await response.json()
         renderJobs()
         // Stats are now calculated in renderJobs() to account for designer filter
+        loadStats()
         loadConfig()
       } catch (error) {
         showError('Failed to load jobs: ' + error.message)
@@ -350,10 +356,10 @@
 
       // Update source counts (from filtered designer jobs)
       const filteredLinkedIn = filteredJobs.filter(j => j.source === 'linkedin').length
-      const filteredRemoteOK = filteredJobs.filter(j => j.source === 'remoteok').length
+      const filteredUIUX = filteredJobs.filter(j => j.source === 'uiuxjobsboard').length
 
       document.getElementById('statLinkedIn').textContent = filteredLinkedIn
-      document.getElementById('statRemoteOK').textContent = filteredRemoteOK
+      document.getElementById('statUIUX').textContent = filteredUIUX
 
       if (filteredJobs.length === 0) {
         container.innerHTML = `<div class="loading">No jobs match your criteria. Try lowering the match score filter.</div>`
@@ -461,18 +467,28 @@
     }
 
     async function loadStats() {
+      // Applications come from the server stats — applied jobs can fall
+      // outside the job list's fetch window, so counting client-side misses
+      // some. The other stat cards reflect the filtered view in renderJobs().
       try {
         const response = await fetch('/api/stats')
         const stats = await response.json()
 
-        document.getElementById('statTotal').textContent = stats.totalJobs
         document.getElementById('statApplied').textContent = stats.applied
 
-        const remoteok = stats.bySource.find(s => s.source === 'remoteok')
-        const linkedin = stats.bySource.find(s => s.source === 'linkedin')
-
-        document.getElementById('statRemoteOK').textContent = remoteok?.count || 0
-        document.getElementById('statLinkedIn').textContent = linkedin?.count || 0
+        // Breakdown of the other application statuses next to the big number
+        const statusDisplay = {
+          offer: { label: 'offers', color: '#27ae60' },
+          saved: { label: 'saved', color: '#3498db' },
+          rejected: { label: 'not a good fit', color: '#e74c3c' }
+        }
+        const counts = {}
+        ;(stats.applicationsByStatus || []).forEach(s => counts[s.status] = s.count)
+        document.getElementById('statAppStatus').innerHTML = Object.entries(statusDisplay)
+          .filter(([status]) => counts[status])
+          .map(([status, d]) =>
+            `<div><span style="font-size: 16px; color: ${d.color};">${counts[status]}</span> ${d.label}</div>`
+          ).join('')
       } catch (error) {
         console.error('Failed to load stats:', error)
       }
@@ -636,11 +652,15 @@
     async function loadJobBoardStats() {
       const boards = [
         { name: 'LinkedIn', emoji: '💼', url: 'linkedin.com', source: 'linkedin' },
-        { name: 'RemoteOK', emoji: '✅', url: 'remoteok.com', source: 'remoteok' },
         { name: 'We Work Remotely', emoji: '🌐', url: 'weworkremotely.com', source: 'weworkremotely' },
         { name: 'Dribbble', emoji: '🎨', url: 'dribbble.com', source: 'dribbble' },
         { name: 'AngelList', emoji: '⭐', url: 'wellfound.com', source: 'angellist' },
         { name: 'Authentic Jobs', emoji: '🎯', url: 'authenticjobs.com', source: 'authenticjobs' },
+        { name: 'UI/UX Jobs Board', emoji: '🖌️', url: 'uiuxjobsboard.com', source: 'uiuxjobsboard' },
+        { name: 'Remotive', emoji: '🛋️', url: 'remotive.com', source: 'remotive' },
+        { name: 'Smashing Magazine', emoji: '🍉', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine' },
+        { name: 'Remote Leaf', emoji: '🍃', url: 'remoteleaf.com', source: 'remoteleaf' },
+        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga' },
         { name: 'Glassdoor', emoji: '💼', url: 'glassdoor.com', source: 'glassdoor' }
       ]
 

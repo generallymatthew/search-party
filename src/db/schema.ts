@@ -1,6 +1,26 @@
 import Database from "better-sqlite3"
 import path from "path"
 
+// Every source a scraper can write; "remoteok" is retired from the search
+// rotation but must stay listed so existing rows survive table rebuilds
+export const JOB_SOURCES = [
+  "glassdoor",
+  "linkedin",
+  "indeed",
+  "angellist",
+  "weworkremotely",
+  "dribbble",
+  "remoteok",
+  "authenticjobs",
+  "uiuxjobsboard",
+  "remotive",
+  "smashingmagazine",
+  "remoteleaf",
+  "aiga",
+] as const
+
+const SOURCE_CHECK = JOB_SOURCES.map((s) => `'${s}'`).join(", ")
+
 export function initializeDatabase(dbPath: string): Database.Database {
   const db = new Database(dbPath)
 
@@ -15,7 +35,7 @@ export function initializeDatabase(dbPath: string): Database.Database {
       salary_max INTEGER,
       salary_currency TEXT DEFAULT 'USD',
       posted_date INTEGER NOT NULL,
-      source TEXT NOT NULL CHECK(source IN ('glassdoor', 'linkedin', 'indeed', 'angellist', 'weworkremotely', 'dribbble', 'remoteok', 'authenticjobs')),
+      source TEXT NOT NULL CHECK(source IN (${SOURCE_CHECK})),
       job_level TEXT,
       description TEXT,
       match_score INTEGER DEFAULT 0,
@@ -65,7 +85,61 @@ export function initializeDatabase(dbPath: string): Database.Database {
       VALUES (1, strftime('%s', 'now'));
   `)
 
+  migrateSourceCheck(db)
+
   return db
+}
+
+// CREATE TABLE IF NOT EXISTS won't update the CHECK constraint on an existing
+// database, and SQLite can't alter constraints in place — so when the stored
+// schema is missing a newer source, rebuild the jobs table around the data.
+function migrateSourceCheck(db: Database.Database) {
+  const jobsTable = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='jobs'")
+    .get() as { sql: string } | undefined
+
+  if (!jobsTable || JOB_SOURCES.every((s) => jobsTable.sql.includes(`'${s}'`))) {
+    return
+  }
+
+  console.log("Migrating jobs table to allow new job board sources...")
+  db.exec(`
+    PRAGMA foreign_keys=OFF;
+    BEGIN TRANSACTION;
+
+    CREATE TABLE jobs_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      company TEXT NOT NULL,
+      location TEXT NOT NULL,
+      url TEXT NOT NULL UNIQUE,
+      salary_min INTEGER,
+      salary_max INTEGER,
+      salary_currency TEXT DEFAULT 'USD',
+      posted_date INTEGER NOT NULL,
+      source TEXT NOT NULL CHECK(source IN (${SOURCE_CHECK})),
+      job_level TEXT,
+      description TEXT,
+      match_score INTEGER DEFAULT 0,
+      match_reasons TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    INSERT INTO jobs_new SELECT * FROM jobs;
+    DROP TABLE jobs;
+    ALTER TABLE jobs_new RENAME TO jobs;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_job_source_url
+      ON jobs(source, url);
+    CREATE INDEX IF NOT EXISTS idx_job_created_at
+      ON jobs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_job_company
+      ON jobs(company);
+
+    COMMIT;
+    PRAGMA foreign_keys=ON;
+  `)
 }
 
 export function isDuplicate(

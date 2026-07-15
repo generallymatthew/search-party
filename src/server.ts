@@ -217,6 +217,11 @@ app.get("/api/stats", (req: Request, res: Response) => {
   // Count applied jobs (from deduplicated jobs)
   const appliedCount = dedupedJobs.filter(j => j.application_status === 'applied').length
 
+  // Application counts by status (one application row per job)
+  const applicationsByStatus = db
+    .prepare("SELECT status, COUNT(*) as count FROM applications GROUP BY status")
+    .all()
+
   // Convert bySource object to array
   const bySourceArray = Object.entries(bySource)
     .map(([source, count]) => ({ source, count }))
@@ -224,6 +229,7 @@ app.get("/api/stats", (req: Request, res: Response) => {
   res.json({
     totalJobs: dedupedJobs.length,
     applied: appliedCount,
+    applicationsByStatus,
     bySource: bySourceArray,
     byLocation: byLocationArray,
   })
