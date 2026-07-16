@@ -1,6 +1,17 @@
 import { chromium, Page } from "playwright"
 import { Job } from "../types"
 
+// LinkedIn job URLs carry per-scrape tracking params (refId, trackingId,
+// position) and regional subdomains (au.linkedin.com), so the same posting
+// looks new on every run. Reduce to the stable numeric job id so URL-based
+// dedup works across runs.
+export function canonicalizeLinkedInUrl(url: string): string {
+  const match = url.match(/\/jobs\/view\/(?:[^/?#]*?-)?(\d+)/)
+  return match
+    ? `https://www.linkedin.com/jobs/view/${match[1]}`
+    : url.split("?")[0]
+}
+
 export async function scrapeLinkedIn(
   jobTitle: string,
   locations: string[]
@@ -60,7 +71,7 @@ export async function scrapeLinkedIn(
             title: card.title,
             company: card.company,
             location: card.location || location,
-            url: card.url,
+            url: canonicalizeLinkedInUrl(card.url),
             postedDate: new Date(),
             source: "linkedin",
           }
