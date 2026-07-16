@@ -292,7 +292,13 @@ app.get("/api/resume", (req: Request, res: Response) => {
 // Trigger search manually
 app.post("/api/search/now", async (req: Request, res: Response) => {
   try {
-    await scheduler.runNow()
+    const started = await scheduler.runNow()
+    if (!started) {
+      res
+        .status(409)
+        .json({ success: false, message: "Search already in progress" })
+      return
+    }
     res.json({ success: true, message: "Search started" })
   } catch (error) {
     res.status(500).json({ error: String(error) })

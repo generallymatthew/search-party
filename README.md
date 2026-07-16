@@ -219,11 +219,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 | AIGA Design Careers | ✅ Active | 20+ | Playwright captures the board's JSON API |
 | Remotive | ✅ Active | ~6 | Public tiles + official API (most listings paywalled) |
 | Smashing Magazine | ✅ Active | Few | Board rarely updated |
-| We Work Remotely | ⏳ Needs Fix | 0 | Selector outdated |
-| Dribbble | ⏳ Needs Fix | 0 | Site structure changed |
-| AngelList/Wellfound | ⏳ Needs Fix | 0 | API-only access |
-| Authentic Jobs | ⏳ Needs Fix | 0 | Bot detection |
-| Glassdoor | ⏳ Needs Fix | 0 | Aggressive bot blocking |
+| Dribbble | ⏳ Needs Fix | 0 | Site allows scraping; selectors outdated |
+| Authentic Jobs | ⏳ Needs Fix | 0 | Site allows scraping; selectors outdated |
+| We Work Remotely | ❌ Removed | — | Blocks scraping (403) |
+| AngelList/Wellfound | ❌ Removed | — | Blocks scraping (403) |
+| Glassdoor | ❌ Removed | — | Blocks scraping (403) |
 | Indeed | ❌ Disabled | — | Partnership API required |
 | RemoteOK | ❌ Removed | — | Listings moved behind a paywall |
 

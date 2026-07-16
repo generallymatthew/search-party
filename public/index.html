@@ -522,6 +522,10 @@
             document.querySelector('button').disabled = false
             document.querySelector('button').textContent = 'Search Now'
           }, 3000)
+        } else {
+          showError(result.message || 'Search failed')
+          document.querySelector('button').disabled = false
+          document.querySelector('button').textContent = 'Search Now'
         }
       } catch (error) {
         showError('Search failed: ' + error.message)
@@ -652,16 +656,13 @@
     async function loadJobBoardStats() {
       const boards = [
         { name: 'LinkedIn', emoji: '💼', url: 'linkedin.com', source: 'linkedin' },
-        { name: 'We Work Remotely', emoji: '🌐', url: 'weworkremotely.com', source: 'weworkremotely' },
         { name: 'Dribbble', emoji: '🎨', url: 'dribbble.com', source: 'dribbble' },
-        { name: 'AngelList', emoji: '⭐', url: 'wellfound.com', source: 'angellist' },
         { name: 'Authentic Jobs', emoji: '🎯', url: 'authenticjobs.com', source: 'authenticjobs' },
         { name: 'UI/UX Jobs Board', emoji: '🖌️', url: 'uiuxjobsboard.com', source: 'uiuxjobsboard' },
         { name: 'Remotive', emoji: '🛋️', url: 'remotive.com', source: 'remotive' },
         { name: 'Smashing Magazine', emoji: '🍉', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine' },
         { name: 'Remote Leaf', emoji: '🍃', url: 'remoteleaf.com', source: 'remoteleaf' },
-        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga' },
-        { name: 'Glassdoor', emoji: '💼', url: 'glassdoor.com', source: 'glassdoor' }
+        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga' }
       ]
 
       try {

@@ -2,11 +2,7 @@ import cron from "node-cron"
 import fs from "fs"
 import path from "path"
 import Database from "better-sqlite3"
-import { scrapeGlassdoor } from "../scrapers/glassdoor"
 import { scrapeLinkedIn } from "../scrapers/linkedin"
-import { scrapeIndeed } from "../scrapers/indeed"
-import { scrapeAngelList } from "../scrapers/angellist"
-import { scrapeWeWorkRemotely } from "../scrapers/weworkremotely"
 import { scrapeDribbble } from "../scrapers/dribbble"
 import { scrapeAuthenticJobs } from "../scrapers/authenticjobs"
 import { scrapeUIUXJobsBoard } from "../scrapers/uiuxjobsboard"
@@ -22,6 +18,7 @@ import { Job } from "../types"
 export class JobSearchScheduler {
   private db: Database.Database
   private tasks: cron.ScheduledTask[] = []
+  private searchInProgress = false
 
   constructor(db: Database.Database) {
     this.db = db
@@ -49,7 +46,27 @@ export class JobSearchScheduler {
     console.log(`Job search scheduler started. Next run scheduled.`)
   }
 
-  async runSearch() {
+  get isRunning(): boolean {
+    return this.searchInProgress
+  }
+
+  async runSearch(): Promise<boolean> {
+    if (this.searchInProgress) {
+      console.log(
+        `[${new Date().toISOString()}] Job search already in progress, skipping`
+      )
+      return false
+    }
+    this.searchInProgress = true
+    try {
+      await this.doSearch()
+    } finally {
+      this.searchInProgress = false
+    }
+    return true
+  }
+
+  private async doSearch() {
     console.log(`\n[${new Date().toISOString()}] Starting job search...`)
 
     const jobTitle = process.env.JOB_TITLE || "UX Designer"
@@ -59,15 +76,13 @@ export class JobSearchScheduler {
 
     try {
       // Run all scrapers in sequence with error handling
+      // Removed boards:
+      // - RemoteOK: job links sit behind a paywall
+      // - Indeed: too aggressive with bot detection
+      // - Glassdoor, AngelList/Wellfound, We Work Remotely: block scraping (403)
       const scrapers = [
         { name: "LinkedIn", fn: () => scrapeLinkedIn(jobTitle, locations) },
-        {
-          name: "We Work Remotely",
-          fn: () => scrapeWeWorkRemotely(jobTitle, locations),
-        },
         { name: "Dribbble", fn: () => scrapeDribbble(jobTitle, locations) },
-        { name: "AngelList", fn: () => scrapeAngelList(jobTitle, locations) },
-        // Note: RemoteOK removed - job links sit behind a paywall
         {
           name: "Authentic Jobs",
           fn: () => scrapeAuthenticJobs(jobTitle, locations),
@@ -86,8 +101,6 @@ export class JobSearchScheduler {
           fn: () => scrapeRemoteLeaf(jobTitle, locations),
         },
         { name: "AIGA", fn: () => scrapeAIGA(jobTitle, locations) },
-        { name: "Glassdoor", fn: () => scrapeGlassdoor(jobTitle, locations) },
-        // Note: Indeed disabled - too aggressive with bot detection
       ]
 
       let totalJobs = 0
@@ -163,8 +176,8 @@ export class JobSearchScheduler {
     console.log("Job search scheduler stopped")
   }
 
-  async runNow() {
+  async runNow(): Promise<boolean> {
     console.log("Running job search immediately...")
-    await this.runSearch()
+    return this.runSearch()
   }
 }
