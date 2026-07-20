@@ -22,7 +22,7 @@
     .modal-close { font-size: 24px; cursor: pointer; background: none; border: none; color: #999; }
     .modal-close:hover { color: #333; }
 
-    .controls { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .controls { padding: 20px 0; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .controls button { background: #0a66c2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; }
     .controls button:hover { background: #085a9f; }
     .controls input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
@@ -66,17 +66,25 @@
     }
 
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
-    .stat-card { background: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #0a66c2; }
+    .stat-card { background: rgba(10, 102, 194, 0.1); padding: 20px; border-radius: 8px; }
     .stat-number { font-size: 32px; font-weight: bold; color: #0a66c2; }
     .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
-    .stat-red { border-left-color: #e74c3c; }
+    .stat-red { background: rgba(231, 76, 60, 0.1); }
     .stat-red .stat-number { color: #e74c3c; }
-    .stat-green { border-left-color: #27ae60; }
+    .stat-green { background: rgba(39, 174, 96, 0.1); }
     .stat-green .stat-number { color: #27ae60; }
-    .stat-orange { border-left-color: #e67e22; }
+    .stat-orange { background: rgba(230, 126, 34, 0.1); }
     .stat-orange .stat-number { color: #e67e22; }
-    .stat-grey { border-left-color: #95a5a6; }
+    .stat-grey { background: rgba(149, 165, 166, 0.1); }
     .stat-grey .stat-number { color: #95a5a6; }
+    .stat-card { cursor: pointer; transition: box-shadow 0.15s; }
+    .stat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .stat-card.stat-selected { box-shadow: 0 0 0 2px #0a66c2 inset; }
+    .stat-red.stat-selected { box-shadow: 0 0 0 2px #e74c3c inset; }
+    .stat-green.stat-selected { box-shadow: 0 0 0 2px #27ae60 inset; }
+    .stat-orange.stat-selected { box-shadow: 0 0 0 2px #e67e22 inset; }
+    .stat-grey.stat-selected { box-shadow: 0 0 0 2px #95a5a6 inset; }
+    #statInfo { padding: 15px 20px; border-radius: 8px; margin: -15px 0 30px; font-size: 14px; line-height: 1.5; background: #fff; color: #444; border-left: 4px solid #0a66c2; }
 
     .jobs-container { }
     .job-card { background: #fff; padding: 20px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; transition: box-shadow 0.2s; }
@@ -212,7 +220,7 @@
           🔍 Job Boards We're Searching
           <button class="modal-close" onclick="closeJobBoardsModal()">✕</button>
         </div>
-        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">We automatically search these job boards daily for UX Design positions in Triangle NC and remote locations.</p>
+        <p id="jobBoardsIntro" style="color: #666; font-size: 14px; margin-bottom: 20px;">We automatically search these job boards daily.</p>
         <div id="jobBoardsList" style="display: grid; gap: 12px;">
           <!-- Populated by JavaScript -->
         </div>
@@ -236,27 +244,29 @@
     <div id="error" style="display: none;" class="error"></div>
 
     <div id="stats" class="stats">
-      <div class="stat-card">
+      <div class="stat-card" onclick="toggleStatInfo('total', this)">
         <div class="stat-number" id="statTotal">0</div>
         <div class="stat-label">Total Jobs</div>
       </div>
-      <div class="stat-card stat-red">
+      <div class="stat-card stat-red" onclick="toggleStatInfo('hidden', this)">
         <div class="stat-number" id="statHidden">0</div>
         <div class="stat-label">Hidden</div>
       </div>
-      <div class="stat-card stat-green">
+      <div class="stat-card stat-green" onclick="toggleStatInfo('applied', this)">
         <div class="stat-number" id="statApplied">0</div>
         <div class="stat-label">Applications</div>
       </div>
-      <div class="stat-card stat-orange">
+      <div class="stat-card stat-orange" onclick="toggleStatInfo('notfit', this)">
         <div class="stat-number" id="statNotFit">0</div>
         <div class="stat-label">Not a Good Fit</div>
       </div>
-      <div class="stat-card stat-grey">
+      <div class="stat-card stat-grey" onclick="toggleStatInfo('unavailable', this)">
         <div class="stat-number" id="statUnavailable">0</div>
         <div class="stat-label">Not Available</div>
       </div>
     </div>
+
+    <div id="statInfo" style="display: none;"></div>
 
     <div id="jobs" class="jobs-container">
       <div class="loading">Loading jobs...</div>
@@ -568,6 +578,55 @@
       }
     }
 
+    const STAT_INFO = {
+      total: {
+        color: '#0a66c2',
+        title: 'Total Jobs',
+        text: 'Jobs currently shown in the list below: designer roles that match one of your search locations and meet the minimum match score. Change the slider or your settings and this number updates.'
+      },
+      hidden: {
+        color: '#e74c3c',
+        title: 'Hidden',
+        text: 'Jobs found by the daily search but kept out of the main list — roles that don’t look like designer positions, plus any jobs below your minimum match score. Non-priority roles appear in the "Hidden - Non-Priority Jobs" section at the very bottom of the page.'
+      },
+      applied: {
+        color: '#27ae60',
+        title: 'Applications',
+        text: 'Jobs you’ve marked with the "Mark Applied" button. They stay in the "Jobs Applied For" section at the bottom of the list so you can track where you’ve applied.'
+      },
+      notfit: {
+        color: '#e67e22',
+        title: 'Not a Good Fit',
+        text: 'Jobs you’ve dismissed with the "Not a Good Fit" button — wrong role, seniority, salary, or just not for you. They move out of the main list into the "Not a Good Fit" section at the bottom.'
+      },
+      unavailable: {
+        color: '#95a5a6',
+        title: 'Not Available',
+        text: 'Jobs you’ve marked "Not Available" because the listing was taken down or the position was filled before you could apply. They’re kept in the "Not a Good Fit" section at the bottom with a "Not Available" badge.'
+      }
+    }
+
+    let openStatInfo = null
+
+    function toggleStatInfo(key, card) {
+      const panel = document.getElementById('statInfo')
+      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('stat-selected'))
+
+      // Clicking the open card again closes the panel
+      if (openStatInfo === key) {
+        openStatInfo = null
+        panel.style.display = 'none'
+        return
+      }
+
+      const info = STAT_INFO[key]
+      openStatInfo = key
+      card.classList.add('stat-selected')
+      panel.style.borderLeftColor = info.color
+      panel.innerHTML = `<strong style="color: ${info.color};">${info.title}</strong> — ${info.text}`
+      panel.style.display = 'block'
+    }
+
     function showError(message) {
       const errorDiv = document.getElementById('error')
       errorDiv.textContent = message
@@ -662,23 +721,32 @@
     }
 
     async function loadJobBoardStats() {
+      // searching: false marks boards in the rotation whose scrapers are
+      // currently broken (return 0 jobs until their selectors are fixed)
       const boards = [
-        { name: 'LinkedIn', emoji: '💼', url: 'linkedin.com', source: 'linkedin' },
-        { name: 'Dribbble', emoji: '🎨', url: 'dribbble.com', source: 'dribbble' },
-        { name: 'Authentic Jobs', emoji: '🎯', url: 'authenticjobs.com', source: 'authenticjobs' },
-        { name: 'UI/UX Jobs Board', emoji: '🖌️', url: 'uiuxjobsboard.com', source: 'uiuxjobsboard' },
-        { name: 'Remotive', emoji: '🛋️', url: 'remotive.com', source: 'remotive' },
-        { name: 'Smashing Magazine', emoji: '🍉', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine' },
-        { name: 'Remote Leaf', emoji: '🍃', url: 'remoteleaf.com', source: 'remoteleaf' },
-        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga' },
-        { name: 'We Work Remotely', emoji: '🌍', url: 'weworkremotely.com', source: 'weworkremotely' },
-        { name: 'Working Nomads', emoji: '🧳', url: 'workingnomads.com', source: 'workingnomads' },
-        { name: 'Jobicy', emoji: '🚀', url: 'jobicy.com', source: 'jobicy' }
+        { name: 'LinkedIn', emoji: '💼', url: 'linkedin.com', source: 'linkedin', searching: true },
+        { name: 'Dribbble', emoji: '🎨', url: 'dribbble.com', source: 'dribbble', searching: false },
+        { name: 'Authentic Jobs', emoji: '🎯', url: 'authenticjobs.com', source: 'authenticjobs', searching: false },
+        { name: 'UI/UX Jobs Board', emoji: '🖌️', url: 'uiuxjobsboard.com', source: 'uiuxjobsboard', searching: true },
+        { name: 'Remotive', emoji: '🛋️', url: 'remotive.com', source: 'remotive', searching: true },
+        { name: 'Smashing Magazine', emoji: '🍉', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine', searching: true },
+        { name: 'Remote Leaf', emoji: '🍃', url: 'remoteleaf.com', source: 'remoteleaf', searching: true },
+        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga', searching: true },
+        { name: 'We Work Remotely', emoji: '🌍', url: 'weworkremotely.com', source: 'weworkremotely', searching: true },
+        { name: 'Working Nomads', emoji: '🧳', url: 'workingnomads.com', source: 'workingnomads', searching: true },
+        { name: 'Jobicy', emoji: '🚀', url: 'jobicy.com', source: 'jobicy', searching: true }
       ]
 
       try {
-        const response = await fetch('/api/stats')
-        const stats = await response.json()
+        const [stats, config] = await Promise.all([
+          fetch('/api/stats').then(r => r.json()),
+          fetch('/api/config').then(r => r.json())
+        ])
+
+        // Show which roles and locations the daily search covers
+        const titles = (config.jobTitle || '').split(',').map(t => t.trim()).filter(Boolean)
+        document.getElementById('jobBoardsIntro').textContent =
+          `We automatically search these job boards daily for ${titles.join(', ')} roles in: ${(config.locations || []).join(', ')}.`
 
         const boardStats = {}
         boards.forEach(b => boardStats[b.source] = 0)
@@ -692,16 +760,19 @@
 
         const html = boards.map(board => {
           const count = boardStats[board.source] || 0
-          const hasJobs = count > 0
+          const searching = board.searching
+          const badge = searching
+            ? '<span style="background: #e8f5e9; color: #27ae60; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">✓ Searching daily</span>'
+            : '<span style="background: #fdf2e9; color: #e67e22; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">⚠ Scraper broken</span>'
           return `
-            <div style="background: ${hasJobs ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${hasJobs ? '#27ae60' : '#ccc'};">
+            <div style="background: ${searching ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? '#27ae60' : '#e67e22'};">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                  <div style="font-weight: 600; font-size: 15px;">${board.emoji} ${board.name}</div>
+                  <div style="font-weight: 600; font-size: 15px;">${board.emoji} ${board.name}${badge}</div>
                   <div style="font-size: 12px; color: #666; margin-top: 4px;">${board.url}</div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 20px; font-weight: bold; color: ${hasJobs ? '#27ae60' : '#999'};">${count}</div>
+                  <div style="font-size: 20px; font-weight: bold; color: ${count > 0 ? '#27ae60' : '#999'};">${count}</div>
                   <div style="font-size: 11px; color: #999;">job${count !== 1 ? 's' : ''}</div>
                 </div>
               </div>
