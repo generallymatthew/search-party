@@ -9,9 +9,10 @@
 - 🤖 **Automated Daily Searches** — Scrapes 10+ job boards automatically
 - 🎯 **Resume-Based Ranking** — Matches jobs to your background (0-100% compatibility)
 - 📊 **Smart Filtering** — Hide low-match jobs, customize search criteria
-- 🌐 **Multiple Boards** — LinkedIn, UI/UX Jobs Board, Remote Leaf, AIGA, Remotive, and more
+- 🌐 **Multiple Boards** — LinkedIn, UI/UX Jobs Board, We Work Remotely, Jobicy, AIGA, and more
+- 🔎 **Multi-Title Search** — Search several roles at once (e.g. UX, Product, and UI Designer)
 - 📧 **Email Digests** — Daily job summaries sent to your inbox
-- 💾 **Application Tracking** — Track which jobs you've applied to
+- 💾 **Application Tracking** — Mark jobs Applied, Not a Good Fit, or Not Available
 - 🎨 **Beautiful Dashboard** — Modern web UI for browsing and filtering
 - ⚙️ **Fully Configurable** — Change job titles, locations, search frequency
 - 🏃 **Always Running** — Scheduled background service on your machine
@@ -60,13 +61,15 @@ See [Deployment Guide](#deployment) for Linux/Windows.
 Edit `.env`:
 
 ```env
-# Job search (customize for any role/location)
-JOB_TITLE=Software Engineer
+# Job search (customize for any roles/locations; comma-separated)
+JOB_TITLE=UX Designer,Product Designer,UI Designer
 SEARCH_LOCATIONS=remote,San Francisco CA,New York NY
 NOTIFY_FREQUENCY=daily  # daily or weekly
 
 # Server
-PORT=9090
+# PORT is optional (defaults to 3000). Leave it unset if something else
+# supplies it — the macOS service plist pins PORT=9090, and the Claude Code
+# dev preview assigns its own port.
 DB_PATH=./data/jobs.db
 
 # Email (optional - for notifications)
@@ -92,6 +95,9 @@ Access at **http://localhost:9090**
 - **📄 Upload & Analyze Resume** — Upload resume for personalized matching
 - **Match Score Slider** — Filter by compatibility (0-100%)
 - **Hide Low Matches** — Toggle to hide jobs below threshold
+- **Job Actions** — Mark jobs **Applied**, **Not a Good Fit**, or **Not Available**
+  (delisted); marked jobs move to their own sections at the bottom, and the
+  stats row tracks a count for each status
 
 ### API
 
@@ -102,7 +108,7 @@ curl http://localhost:9090/api/jobs?limit=50
 # Get job statistics
 curl http://localhost:9090/api/stats
 
-# Mark job as applied
+# Mark job as applied (status: saved | applied | rejected | offer | unavailable)
 curl -X POST http://localhost:9090/api/jobs/1/apply \
   -H "Content-Type: application/json" \
   -d '{"status":"applied"}'
@@ -140,7 +146,9 @@ search-party/
 ### How It Works
 
 1. **Scheduler** runs at configured time (default: 8 AM daily)
-2. **Scrapers** fetch jobs from multiple boards using Playwright
+2. **Scrapers** fetch jobs from multiple boards — once per configured job
+   title for boards driven by a search query or category, once total for
+   boards that serve a whole design feed
 3. **Deduplication** prevents duplicate listings
 4. **Resume Matching** scores each job against your background (if uploaded)
 5. **Email Digest** sends new jobs to your inbox (optional)
@@ -192,13 +200,15 @@ export async function scrapeNewBoard(
 }
 ```
 
-Register in `src/scheduler/index.ts`:
+Register in `src/scheduler/index.ts`. Wrap the call in `forEachTitle` if the
+board's results depend on the search title (query- or category-driven);
+call it directly if the board serves one fixed feed:
 
 ```typescript
 import { scrapeNewBoard } from "../scrapers/newboard"
 
 const scrapers = [
-  { name: "New Board", fn: () => scrapeNewBoard(jobTitle, locations) },
+  { name: "New Board", fn: forEachTitle((t) => scrapeNewBoard(t, locations)) },
   // ... existing scrapers
 ]
 ```
@@ -213,15 +223,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 | Board | Status | Jobs Found | Notes |
 |-------|--------|-----------|-------|
-| LinkedIn | ✅ Active | 200+ | Official access |
-| UI/UX Jobs Board | ✅ Active | 100+ | Server-rendered, category pages |
+| LinkedIn | ✅ Active | 300+ | Official access |
+| UI/UX Jobs Board | ✅ Active | 250+ | Server-rendered, per-title category pages |
+| AIGA Design Careers | ✅ Active | 50+ | Playwright captures the board's JSON API |
 | Remote Leaf | ✅ Active | 30+ | Public category pages (curated feed is paid) |
-| AIGA Design Careers | ✅ Active | 20+ | Playwright captures the board's JSON API |
-| Remotive | ✅ Active | ~6 | Public tiles + official API (most listings paywalled) |
+| Jobicy | ✅ Active | ~30 | Official public API (design industries) |
+| We Work Remotely | ✅ Active | ~25 | Public design-category RSS feed (HTML pages 403) |
+| Remotive | ✅ Active | ~15 | Public tiles + official API (most listings paywalled) |
+| Working Nomads | ✅ Active | ~5 | Official public API (latest ~40 jobs) |
 | Smashing Magazine | ✅ Active | Few | Board rarely updated |
 | Dribbble | ⏳ Needs Fix | 0 | Site allows scraping; selectors outdated |
 | Authentic Jobs | ⏳ Needs Fix | 0 | Site allows scraping; selectors outdated |
-| We Work Remotely | ❌ Removed | — | Blocks scraping (403) |
 | AngelList/Wellfound | ❌ Removed | — | Blocks scraping (403) |
 | Glassdoor | ❌ Removed | — | Blocks scraping (403) |
 | Indeed | ❌ Disabled | — | Partnership API required |

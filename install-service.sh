@@ -46,6 +46,8 @@ cat > "$PLIST_FILE" << EOF
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>NODE_ENV</key>
         <string>production</string>
+        <key>PORT</key>
+        <string>9090</string>
     </dict>
 </dict>
 </plist>

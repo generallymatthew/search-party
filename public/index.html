@@ -65,10 +65,18 @@
       border: none;
     }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
     .stat-card { background: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #0a66c2; }
     .stat-number { font-size: 32px; font-weight: bold; color: #0a66c2; }
     .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
+    .stat-red { border-left-color: #e74c3c; }
+    .stat-red .stat-number { color: #e74c3c; }
+    .stat-green { border-left-color: #27ae60; }
+    .stat-green .stat-number { color: #27ae60; }
+    .stat-orange { border-left-color: #e67e22; }
+    .stat-orange .stat-number { color: #e67e22; }
+    .stat-grey { border-left-color: #95a5a6; }
+    .stat-grey .stat-number { color: #95a5a6; }
 
     .jobs-container { }
     .job-card { background: #fff; padding: 20px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; transition: box-shadow 0.2s; }
@@ -85,9 +93,10 @@
     .job-salary { color: #27ae60; font-weight: 600; margin-top: 10px; }
 
     .job-actions { margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .job-actions a { display: inline-block; background: #0a66c2; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; margin-left: auto; }
+    .job-actions a { display: inline-block; background: #0a66c2; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
     .job-actions a:hover { background: #085a9f; }
     .job-actions button { border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .job-actions button:first-of-type { margin-left: auto; }
     .btn-applied { background: #27ae60; color: white; }
     .btn-applied:hover { background: #219150; }
     .btn-notfit { background: #e67e22; color: white; }
@@ -228,33 +237,24 @@
 
     <div id="stats" class="stats">
       <div class="stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-          <div>
-            <div class="stat-number" id="statTotal">0</div>
-            <div class="stat-label">Total Jobs</div>
-          </div>
-          <div style="text-align: right; font-size: 12px; color: #999;">
-            <div id="statHidden" style="font-size: 16px; color: #e74c3c;">0</div>
-            <div>hidden</div>
-          </div>
-        </div>
+        <div class="stat-number" id="statTotal">0</div>
+        <div class="stat-label">Total Jobs</div>
       </div>
-      <div class="stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-          <div>
-            <div class="stat-number" id="statApplied">0</div>
-            <div class="stat-label">Applications</div>
-          </div>
-          <div id="statAppStatus" style="text-align: right; font-size: 12px; color: #999;"></div>
-        </div>
+      <div class="stat-card stat-red">
+        <div class="stat-number" id="statHidden">0</div>
+        <div class="stat-label">Hidden</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number" id="statLinkedIn">0</div>
-        <div class="stat-label">From LinkedIn</div>
+      <div class="stat-card stat-green">
+        <div class="stat-number" id="statApplied">0</div>
+        <div class="stat-label">Applications</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number" id="statUIUX">0</div>
-        <div class="stat-label">From UI/UX Jobs Board</div>
+      <div class="stat-card stat-orange">
+        <div class="stat-number" id="statNotFit">0</div>
+        <div class="stat-label">Not a Good Fit</div>
+      </div>
+      <div class="stat-card stat-grey">
+        <div class="stat-number" id="statUnavailable">0</div>
+        <div class="stat-label">Not Available</div>
       </div>
     </div>
 
@@ -361,13 +361,6 @@
       document.getElementById('statTotal').textContent = filteredJobs.length
       document.getElementById('statHidden').textContent = totalHidden
 
-      // Update source counts (from filtered designer jobs)
-      const filteredLinkedIn = filteredJobs.filter(j => j.source === 'linkedin').length
-      const filteredUIUX = filteredJobs.filter(j => j.source === 'uiuxjobsboard').length
-
-      document.getElementById('statLinkedIn').textContent = filteredLinkedIn
-      document.getElementById('statUIUX').textContent = filteredUIUX
-
       if (filteredJobs.length === 0) {
         container.innerHTML = `<div class="loading">No jobs match your criteria. Try lowering the match score filter.</div>`
         return
@@ -388,7 +381,7 @@
         const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good' : matchScore >= 40 ? 'Fair' : 'New Job'
         const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
         const nonPriorityIndicator = job.isPriority === false ? '<span style="background: #95a5a6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-Priority Match</span>' : ''
-        const unavailableIndicator = job.application_status === 'unavailable' ? '<span style="background: #7f8c8d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">No Longer Available</span>' : ''
+        const unavailableIndicator = job.application_status === 'unavailable' ? '<span style="background: #7f8c8d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Not Available</span>' : ''
 
         return `
           <div class="job-card">
@@ -422,6 +415,7 @@
             ` : ''}
 
             <div class="job-actions">
+              <a href="${escapeHtml(job.url)}" target="_blank">View Job</a>
               <button onclick="markApplied(${job.id})" class="btn-applied">
                 ${job.application_status === 'applied' ? '✓ Applied' : 'Mark Applied'}
               </button>
@@ -430,10 +424,9 @@
                   Not a Good Fit
                 </button>
                 <button onclick="markNoLongerAvailable(${job.id})" class="btn-unavailable">
-                  ${job.application_status === 'unavailable' ? '✓ No Longer Available' : 'No Longer Available'}
+                  ${job.application_status === 'unavailable' ? '✓ Not Available' : 'Not Available'}
                 </button>
               ` : ''}
-              <a href="${escapeHtml(job.url)}" target="_blank">View Job</a>
             </div>
           </div>
         `
@@ -485,22 +478,12 @@
         const response = await fetch('/api/stats')
         const stats = await response.json()
 
-        document.getElementById('statApplied').textContent = stats.applied
-
-        // Breakdown of the other application statuses next to the big number
-        const statusDisplay = {
-          offer: { label: 'offers', color: '#27ae60' },
-          saved: { label: 'saved', color: '#3498db' },
-          rejected: { label: 'not a good fit', color: '#e67e22' },
-          unavailable: { label: 'no longer available', color: '#95a5a6' }
-        }
         const counts = {}
         ;(stats.applicationsByStatus || []).forEach(s => counts[s.status] = s.count)
-        document.getElementById('statAppStatus').innerHTML = Object.entries(statusDisplay)
-          .filter(([status]) => counts[status])
-          .map(([status, d]) =>
-            `<div><span style="font-size: 16px; color: ${d.color};">${counts[status]}</span> ${d.label}</div>`
-          ).join('')
+
+        document.getElementById('statApplied').textContent = stats.applied
+        document.getElementById('statNotFit').textContent = counts.rejected || 0
+        document.getElementById('statUnavailable').textContent = counts.unavailable || 0
       } catch (error) {
         console.error('Failed to load stats:', error)
       }

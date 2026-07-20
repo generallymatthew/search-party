@@ -152,13 +152,16 @@ export async function scrapeNewBoard(
 
 ### 2. Register in Scheduler
 
-Edit `src/scheduler/index.ts`:
+Edit `src/scheduler/index.ts`. `JOB_TITLE` may hold several comma-separated
+titles — wrap the call in `forEachTitle` if the board's results depend on
+the search title (query- or category-driven), or call it directly with
+`jobTitles[0]` if the board serves one fixed feed:
 
 ```typescript
 import { scrapeNewBoard } from "../scrapers/newboard"
 
 const scrapers = [
-  { name: "NewBoard", fn: () => scrapeNewBoard(jobTitle, locations) },
+  { name: "NewBoard", fn: forEachTitle((t) => scrapeNewBoard(t, locations)) },
   // ... existing scrapers
 ]
 ```
