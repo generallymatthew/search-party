@@ -84,9 +84,16 @@
 
     .job-salary { color: #27ae60; font-weight: 600; margin-top: 10px; }
 
-    .job-actions { margin-top: 15px; display: flex; gap: 10px; }
-    .job-actions a { display: inline-block; background: #0a66c2; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
+    .job-actions { margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .job-actions a { display: inline-block; background: #0a66c2; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; margin-left: auto; }
     .job-actions a:hover { background: #085a9f; }
+    .job-actions button { border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .btn-applied { background: #27ae60; color: white; }
+    .btn-applied:hover { background: #219150; }
+    .btn-notfit { background: #e67e22; color: white; }
+    .btn-notfit:hover { background: #cf6d17; }
+    .btn-unavailable { background: #dde3e8; color: #5d6d7e; }
+    .btn-unavailable:hover { background: #cbd4db; }
 
     .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
     .status-saved { background: #e3f2fd; color: #0a66c2; }
@@ -138,8 +145,8 @@
         </div>
         <div style="display: grid; gap: 15px;">
           <div>
-            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Job Title to Search</label>
-            <input type="text" id="jobTitleInput" value="UX Designer" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Job Titles to Search (comma-separated)</label>
+            <input type="text" id="jobTitleInput" value="UX Designer, Product Designer, UI Designer" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
           </div>
 
           <div>
@@ -165,7 +172,7 @@
 
             <div>
               <label style="display: block; font-weight: 600; margin-bottom: 5px;">Priority Job Keywords (comma-separated)</label>
-              <input type="text" id="priorityKeywordsInput" value="UX Designer,Experience Designer,User Experience Designer,UX/UI" placeholder="e.g., UX Designer, Product Manager" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+              <input type="text" id="priorityKeywordsInput" value="UX Designer,Experience Designer,User Experience Designer,UX/UI,Product Designer,UI Designer" placeholder="e.g., UX Designer, Product Manager" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
               <div style="font-size: 12px; color: #999; margin-top: 5px;">Jobs with these keywords show at top with full match score</div>
             </div>
 
@@ -262,7 +269,7 @@
     let hideLowMatches = false
     let demotionPenaltyAmount = 20
     let showNonPriorityJobs = true
-    let priorityJobKeywords = ['ux designer', 'experience designer', 'user experience designer', 'ux/ui']
+    let priorityJobKeywords = ['ux designer', 'experience designer', 'user experience designer', 'ux/ui', 'product designer', 'ui designer']
 
     async function loadJobs() {
       try {
@@ -368,8 +375,8 @@
 
       // Separate jobs into three categories
       const appliedJobs = filteredJobs.filter(j => j.application_status === 'applied')
-      const notAGoodFitJobs = filteredJobs.filter(j => j.application_status === 'rejected')
-      const notAppliedJobs = filteredJobs.filter(j => j.application_status !== 'applied' && j.application_status !== 'rejected')
+      const notAGoodFitJobs = filteredJobs.filter(j => j.application_status === 'rejected' || j.application_status === 'unavailable')
+      const notAppliedJobs = filteredJobs.filter(j => j.application_status !== 'applied' && j.application_status !== 'rejected' && j.application_status !== 'unavailable')
 
       // Sort applied and not a good fit jobs by most recent (using updated_at or created_at)
       appliedJobs.sort((a, b) => (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0))
@@ -381,12 +388,13 @@
         const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good' : matchScore >= 40 ? 'Fair' : 'New Job'
         const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
         const nonPriorityIndicator = job.isPriority === false ? '<span style="background: #95a5a6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-Priority Match</span>' : ''
+        const unavailableIndicator = job.application_status === 'unavailable' ? '<span style="background: #7f8c8d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">No Longer Available</span>' : ''
 
         return `
           <div class="job-card">
             <div class="job-header">
               <div>
-                <div class="job-title">${escapeHtml(job.title)}${nonPriorityIndicator}</div>
+                <div class="job-title">${escapeHtml(job.title)}${nonPriorityIndicator}${unavailableIndicator}</div>
                 <div class="job-company">${escapeHtml(job.company)}</div>
               </div>
               <div style="text-align: right;">
@@ -414,15 +422,18 @@
             ` : ''}
 
             <div class="job-actions">
-              <a href="${escapeHtml(job.url)}" target="_blank">View Job</a>
-              <button onclick="markApplied(${job.id})" style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+              <button onclick="markApplied(${job.id})" class="btn-applied">
                 ${job.application_status === 'applied' ? '✓ Applied' : 'Mark Applied'}
               </button>
               ${job.application_status !== 'applied' ? `
-                <button onclick="markNotAGoodFit(${job.id})" style="background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+                <button onclick="markNotAGoodFit(${job.id})" class="btn-notfit">
                   Not a Good Fit
                 </button>
+                <button onclick="markNoLongerAvailable(${job.id})" class="btn-unavailable">
+                  ${job.application_status === 'unavailable' ? '✓ No Longer Available' : 'No Longer Available'}
+                </button>
               ` : ''}
+              <a href="${escapeHtml(job.url)}" target="_blank">View Job</a>
             </div>
           </div>
         `
@@ -439,7 +450,7 @@
 
       if (notAGoodFitJobs.length > 0) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #e74c3c; margin-bottom: 20px;">✗ Not a Good Fit</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: #e67e22; margin-bottom: 20px;">✗ Not a Good Fit</h2>
           ${notAGoodFitJobs.map(renderJobCard).join('')}
         </div>`
       }
@@ -480,7 +491,8 @@
         const statusDisplay = {
           offer: { label: 'offers', color: '#27ae60' },
           saved: { label: 'saved', color: '#3498db' },
-          rejected: { label: 'not a good fit', color: '#e74c3c' }
+          rejected: { label: 'not a good fit', color: '#e67e22' },
+          unavailable: { label: 'no longer available', color: '#95a5a6' }
         }
         const counts = {}
         ;(stats.applicationsByStatus || []).forEach(s => counts[s.status] = s.count)
@@ -553,6 +565,19 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'rejected' })
+        })
+        loadJobs()
+      } catch (error) {
+        showError('Failed to update: ' + error.message)
+      }
+    }
+
+    async function markNoLongerAvailable(jobId) {
+      try {
+        await fetch(`/api/jobs/${jobId}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'unavailable' })
         })
         loadJobs()
       } catch (error) {
@@ -662,7 +687,10 @@
         { name: 'Remotive', emoji: '🛋️', url: 'remotive.com', source: 'remotive' },
         { name: 'Smashing Magazine', emoji: '🍉', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine' },
         { name: 'Remote Leaf', emoji: '🍃', url: 'remoteleaf.com', source: 'remoteleaf' },
-        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga' }
+        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga' },
+        { name: 'We Work Remotely', emoji: '🌍', url: 'weworkremotely.com', source: 'weworkremotely' },
+        { name: 'Working Nomads', emoji: '🧳', url: 'workingnomads.com', source: 'workingnomads' },
+        { name: 'Jobicy', emoji: '🚀', url: 'jobicy.com', source: 'jobicy' }
       ]
 
       try {

@@ -9,7 +9,7 @@ export interface Job {
     currency?: string
   }
   postedDate: Date
-  source: "glassdoor" | "linkedin" | "indeed" | "angellist" | "weworkremotely" | "dribbble" | "remoteok" | "authenticjobs" | "uiuxjobsboard" | "remotive" | "smashingmagazine" | "remoteleaf" | "aiga"
+  source: "glassdoor" | "linkedin" | "indeed" | "angellist" | "weworkremotely" | "dribbble" | "remoteok" | "authenticjobs" | "uiuxjobsboard" | "remotive" | "smashingmagazine" | "remoteleaf" | "aiga" | "workingnomads" | "jobicy"
   jobLevel?: string
   description?: string
 }

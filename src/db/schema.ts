@@ -17,9 +17,23 @@ export const JOB_SOURCES = [
   "smashingmagazine",
   "remoteleaf",
   "aiga",
+  "workingnomads",
+  "jobicy",
 ] as const
 
 const SOURCE_CHECK = JOB_SOURCES.map((s) => `'${s}'`).join(", ")
+
+// Every status an application row can hold; 'unavailable' marks a listing
+// that was taken down before the user applied
+export const APPLICATION_STATUSES = [
+  "saved",
+  "applied",
+  "rejected",
+  "offer",
+  "unavailable",
+] as const
+
+const STATUS_CHECK = APPLICATION_STATUSES.map((s) => `'${s}'`).join(", ")
 
 export function initializeDatabase(dbPath: string): Database.Database {
   const db = new Database(dbPath)
@@ -57,7 +71,7 @@ export function initializeDatabase(dbPath: string): Database.Database {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       job_id INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'saved'
-        CHECK(status IN ('saved', 'applied', 'rejected', 'offer')),
+        CHECK(status IN (${STATUS_CHECK})),
       applied_date INTEGER NOT NULL,
       notes TEXT,
       created_at INTEGER NOT NULL,
@@ -86,6 +100,7 @@ export function initializeDatabase(dbPath: string): Database.Database {
   `)
 
   migrateSourceCheck(db)
+  migrateStatusCheck(db)
 
   return db
 }
@@ -136,6 +151,43 @@ function migrateSourceCheck(db: Database.Database) {
       ON jobs(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_job_company
       ON jobs(company);
+
+    COMMIT;
+    PRAGMA foreign_keys=ON;
+  `)
+}
+
+// Same in-place-constraint limitation as migrateSourceCheck: when the stored
+// applications schema is missing a newer status, rebuild the table around the data.
+function migrateStatusCheck(db: Database.Database) {
+  const appsTable = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='applications'")
+    .get() as { sql: string } | undefined
+
+  if (!appsTable || APPLICATION_STATUSES.every((s) => appsTable.sql.includes(`'${s}'`))) {
+    return
+  }
+
+  console.log("Migrating applications table to allow new statuses...")
+  db.exec(`
+    PRAGMA foreign_keys=OFF;
+    BEGIN TRANSACTION;
+
+    CREATE TABLE applications_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'saved'
+        CHECK(status IN (${STATUS_CHECK})),
+      applied_date INTEGER NOT NULL,
+      notes TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+    );
+
+    INSERT INTO applications_new SELECT * FROM applications;
+    DROP TABLE applications;
+    ALTER TABLE applications_new RENAME TO applications;
 
     COMMIT;
     PRAGMA foreign_keys=ON;

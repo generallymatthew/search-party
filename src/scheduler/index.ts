@@ -10,6 +10,9 @@ import { scrapeRemotive } from "../scrapers/remotive"
 import { scrapeSmashingMagazine } from "../scrapers/smashingmagazine"
 import { scrapeRemoteLeaf } from "../scrapers/remoteleaf"
 import { scrapeAIGA } from "../scrapers/aiga"
+import { scrapeWeWorkRemotely } from "../scrapers/weworkremotely"
+import { scrapeWorkingNomads } from "../scrapers/workingnomads"
+import { scrapeJobicy } from "../scrapers/jobicy"
 import { isDuplicate, addJob, updateLastSearch, updateJobMatchScore } from "../db/schema"
 import { sendJobDigest } from "../notifications/email"
 import { parseResume, scoreJobMatch } from "../services/resumeparser"
@@ -69,38 +72,80 @@ export class JobSearchScheduler {
   private async doSearch() {
     console.log(`\n[${new Date().toISOString()}] Starting job search...`)
 
-    const jobTitle = process.env.JOB_TITLE || "UX Designer"
+    // JOB_TITLE accepts a comma-separated list, e.g.
+    // "UX Designer,Product Designer,UI Designer"
+    const jobTitles = (process.env.JOB_TITLE || "UX Designer")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
     const locations = (process.env.SEARCH_LOCATIONS || "remote,Raleigh NC")
       .split(",")
       .map((l) => l.trim())
+
+    // Run a title-driven scraper once per configured title; boards that
+    // ignore the title (category feeds) are called directly instead
+    const forEachTitle =
+      (fn: (title: string) => Promise<Job[]>) => async () => {
+        const all: Job[] = []
+        const seen = new Set<string>()
+        for (const title of jobTitles) {
+          for (const job of await fn(title)) {
+            if (seen.has(job.url)) continue
+            seen.add(job.url)
+            all.push(job)
+          }
+        }
+        return all
+      }
 
     try {
       // Run all scrapers in sequence with error handling
       // Removed boards:
       // - RemoteOK: job links sit behind a paywall
       // - Indeed: too aggressive with bot detection
-      // - Glassdoor, AngelList/Wellfound, We Work Remotely: block scraping (403)
+      // - Glassdoor, AngelList/Wellfound: block scraping (403)
+      // (We Work Remotely also 403s HTML pages, but its RSS feed is public)
       const scrapers = [
-        { name: "LinkedIn", fn: () => scrapeLinkedIn(jobTitle, locations) },
-        { name: "Dribbble", fn: () => scrapeDribbble(jobTitle, locations) },
+        {
+          name: "LinkedIn",
+          fn: forEachTitle((t) => scrapeLinkedIn(t, locations)),
+        },
+        // Dribbble and Authentic Jobs search a fixed design/UX query
+        {
+          name: "Dribbble",
+          fn: () => scrapeDribbble(jobTitles[0], locations),
+        },
         {
           name: "Authentic Jobs",
-          fn: () => scrapeAuthenticJobs(jobTitle, locations),
+          fn: () => scrapeAuthenticJobs(jobTitles[0], locations),
         },
         {
           name: "UI/UX Jobs Board",
-          fn: () => scrapeUIUXJobsBoard(jobTitle, locations),
+          fn: forEachTitle((t) => scrapeUIUXJobsBoard(t, locations)),
         },
-        { name: "Remotive", fn: () => scrapeRemotive(jobTitle, locations) },
+        {
+          name: "Remotive",
+          fn: forEachTitle((t) => scrapeRemotive(t, locations)),
+        },
         {
           name: "Smashing Magazine",
-          fn: () => scrapeSmashingMagazine(jobTitle, locations),
+          fn: forEachTitle((t) => scrapeSmashingMagazine(t, locations)),
         },
         {
           name: "Remote Leaf",
-          fn: () => scrapeRemoteLeaf(jobTitle, locations),
+          fn: forEachTitle((t) => scrapeRemoteLeaf(t, locations)),
         },
-        { name: "AIGA", fn: () => scrapeAIGA(jobTitle, locations) },
+        { name: "AIGA", fn: forEachTitle((t) => scrapeAIGA(t, locations)) },
+        // WWR and Jobicy pull whole design category feeds; the title is unused
+        {
+          name: "We Work Remotely",
+          fn: () => scrapeWeWorkRemotely(jobTitles[0], locations),
+        },
+        {
+          name: "Working Nomads",
+          fn: forEachTitle((t) => scrapeWorkingNomads(t, locations)),
+        },
+        { name: "Jobicy", fn: () => scrapeJobicy(jobTitles[0], locations) },
       ]
 
       let totalJobs = 0
