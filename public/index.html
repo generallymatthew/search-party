@@ -6,13 +6,16 @@
   <title>Search Party</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
-    /* A restrained accent palette: one primary plus three semantic tones,
-       all at a matching saturation so they sit well together. */
+    /* Brand palette: Deep Plum (primary), Bright Lime (success),
+       Coral Red (warning), Teal Cyan (secondary/info), plus a low-chroma
+       slate for muted states. Lime is light, so it carries darker "ink"
+       variants for text and on-fill use to stay readable. */
     :root {
-      --primary: #2563eb;      --primary-dark: #1d4ed8;   --primary-soft: #eff6ff;
-      --success: #16a34a;      --success-dark: #15803d;   --success-soft: #f0fdf4;
-      --warning: #d97706;      --warning-dark: #b45309;   --warning-soft: #fffbeb;
-      --neutral: #64748b;      --neutral-dark: #475569;   --neutral-soft: #f1f5f9;
+      --primary: #6b3a8f;   --primary-dark: #57306f;   --primary-soft: #f1ebf7;
+      --success: #a8d035;   --success-dark: #8fb52a;   --success-ink: #55701a;   --on-success: #24350a;   --success-soft: #f3f8e1;
+      --warning: #e8524a;   --warning-dark: #d23f37;   --warning-soft: #fdeceb;
+      --secondary: #2ba8a8; --secondary-dark: #218888; --secondary-soft: #e4f4f4;
+      --neutral: #64748b;   --neutral-dark: #475569;   --neutral-soft: #f1f5f9;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
@@ -74,22 +77,22 @@
     }
 
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
-    .stat-card { background: var(--primary-soft); padding: 20px; border-radius: 8px; }
-    .stat-number { font-size: 32px; font-weight: bold; color: var(--primary); }
+    .stat-card { background: var(--secondary-soft); padding: 20px; border-radius: 8px; }
+    .stat-number { font-size: 32px; font-weight: bold; color: var(--secondary-dark); }
     .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
     .stat-red { background: var(--neutral-soft); }
     .stat-red .stat-number { color: var(--neutral); }
     .stat-green { background: var(--success-soft); }
-    .stat-green .stat-number { color: var(--success); }
+    .stat-green .stat-number { color: var(--success-ink); }
     .stat-orange { background: var(--warning-soft); }
     .stat-orange .stat-number { color: var(--warning); }
     .stat-grey { background: var(--neutral-soft); }
     .stat-grey .stat-number { color: var(--neutral); }
     .stat-card { cursor: pointer; transition: box-shadow 0.15s; }
     .stat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-    .stat-card.stat-selected { box-shadow: 0 0 0 2px var(--primary) inset; }
+    .stat-card.stat-selected { box-shadow: 0 0 0 2px var(--secondary) inset; }
     .stat-red.stat-selected { box-shadow: 0 0 0 2px var(--neutral) inset; }
-    .stat-green.stat-selected { box-shadow: 0 0 0 2px var(--success) inset; }
+    .stat-green.stat-selected { box-shadow: 0 0 0 2px var(--success-ink) inset; }
     .stat-orange.stat-selected { box-shadow: 0 0 0 2px var(--warning) inset; }
     .stat-grey.stat-selected { box-shadow: 0 0 0 2px var(--neutral) inset; }
     #statInfo { padding: 15px 20px; border-radius: 8px; margin: -15px 0 30px; font-size: 14px; line-height: 1.5; background: #fff; color: #444; border-left: 4px solid var(--primary); }
@@ -106,14 +109,14 @@
     .job-meta { font-size: 14px; color: #666; margin-bottom: 10px; }
     .job-meta span { margin-right: 20px; }
 
-    .job-salary { color: var(--success); font-weight: 600; margin-top: 10px; }
+    .job-salary { color: var(--success-ink); font-weight: 600; margin-top: 10px; }
 
     .job-actions { margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .job-actions a { display: inline-block; background: var(--primary); color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
     .job-actions a:hover { background: var(--primary-dark); }
     .job-actions button { border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; }
     .job-actions button:first-of-type { margin-left: auto; }
-    .btn-applied { background: var(--success); color: white; }
+    .btn-applied { background: var(--success); color: var(--on-success); }
     .btn-applied:hover { background: var(--success-dark); }
     .btn-notfit { background: var(--warning); color: white; }
     .btn-notfit:hover { background: var(--warning-dark); }
@@ -121,8 +124,8 @@
     .btn-unavailable:hover { background: #e2e8f0; }
 
     .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-    .status-saved { background: var(--primary-soft); color: var(--primary); }
-    .status-applied { background: var(--success-soft); color: var(--success); }
+    .status-saved { background: var(--secondary-soft); color: var(--secondary-dark); }
+    .status-applied { background: var(--success-soft); color: var(--success-ink); }
 
     .loading { text-align: center; padding: 40px; color: #666; }
     .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
@@ -142,8 +145,8 @@
         <p>Find your next opportunity</p>
       </div>
       <div style="display: flex; gap: 10px;">
-        <button onclick="openSettingsModal()" style="background: var(--neutral-soft); color: var(--neutral-dark); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Settings</button>
-        <button onclick="openJobBoardsModal()" style="background: var(--neutral-soft); color: var(--neutral-dark); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Job Boards</button>
+        <button onclick="openSettingsModal()" style="background: var(--secondary-soft); color: var(--secondary-dark); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Settings</button>
+        <button onclick="openJobBoardsModal()" style="background: var(--secondary-soft); color: var(--secondary-dark); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Job Boards</button>
         <button onclick="openResumeModal()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Upload & Analyze Resume</button>
       </div>
     </header>
@@ -422,7 +425,8 @@
 
       const renderJobCard = (job) => {
         const matchScore = job.adjustedMatchScore !== undefined ? job.adjustedMatchScore : (job.match_score || 0)
-        const matchColor = matchScore >= 80 ? 'var(--success)' : matchScore >= 55 ? 'var(--warning)' : 'var(--neutral)'
+        const matchColor = matchScore >= 80 ? 'var(--success)' : matchScore >= 55 ? 'var(--secondary)' : 'var(--neutral)'
+        const matchInk = matchScore >= 80 ? 'var(--on-success)' : 'white'
         const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good' : matchScore >= 40 ? 'Fair' : 'New Job'
         const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
         const nonPriorityIndicator = job.isPriority === false ? '<span style="background: var(--neutral); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-Priority Match</span>' : ''
@@ -438,7 +442,7 @@
               </div>
               <div style="text-align: right;">
                 ${matchScore > 0 ? `
-                  <div style="background: ${matchColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 5px;">
+                  <div style="background: ${matchColor}; color: ${matchInk}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 5px;">
                     ${matchScore}% Match
                   </div>
                 ` : ''}
@@ -482,7 +486,7 @@
 
       if (appliedJobs.length > 0) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-          <h2 style="font-size: 20px; font-weight: bold; color: var(--success); margin-bottom: 20px;">Jobs Applied For</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: var(--success-ink); margin-bottom: 20px;">Jobs Applied For</h2>
           ${appliedJobs.map(renderJobCard).join('')}
         </div>`
       }
@@ -617,7 +621,7 @@
 
     const STAT_INFO = {
       total: {
-        color: 'var(--primary)',
+        color: 'var(--secondary-dark)',
         title: 'Total Jobs',
         text: 'Jobs currently shown in the list below: designer roles that match one of your search locations and meet the minimum match score. Change the slider or your settings and this number updates.'
       },
@@ -627,7 +631,7 @@
         text: 'Jobs found by the daily search but kept out of the main list — roles that don’t look like designer positions, plus any jobs below your minimum match score. Non-priority roles appear in the "Hidden - Non-Priority Jobs" section at the very bottom of the page.'
       },
       applied: {
-        color: 'var(--success)',
+        color: 'var(--success-ink)',
         title: 'Applications',
         text: 'Jobs you’ve marked with the "Mark Applied" button. They stay in the "Jobs Applied For" section at the bottom of the list so you can track where you’ve applied.'
       },
@@ -815,7 +819,7 @@
           const searching = board.searching
           const enabled = !disabledSources.has(board.source)
           const badge = searching
-            ? '<span style="background: var(--success-soft); color: var(--success); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Searching daily</span>'
+            ? '<span style="background: var(--success-soft); color: var(--success-ink); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Searching daily</span>'
             : '<span style="background: var(--warning-soft); color: var(--warning); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Scraper broken</span>'
           return `
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: ${searching ? 'var(--success-soft)' : 'var(--neutral-soft)'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? 'var(--success)' : 'var(--warning)'}; opacity: ${enabled ? '1' : '0.55'};">
@@ -826,7 +830,7 @@
                   <div style="font-size: 12px; color: #666; margin-top: 4px;">${board.url}</div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 20px; font-weight: bold; color: ${count > 0 ? 'var(--success)' : '#999'};">${count}</div>
+                  <div style="font-size: 20px; font-weight: bold; color: ${count > 0 ? 'var(--success-ink)' : '#999'};">${count}</div>
                   <div style="font-size: 11px; color: #999;">job${count !== 1 ? 's' : ''}</div>
                 </div>
               </div>
