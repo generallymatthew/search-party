@@ -134,9 +134,9 @@
         <p>Find your next opportunity</p>
       </div>
       <div style="display: flex; gap: 10px;">
-        <button onclick="openSettingsModal()" style="background: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">⚙️ Settings</button>
-        <button onclick="openJobBoardsModal()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">🔍 Job Boards</button>
-        <button onclick="openResumeModal()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">📄 Upload & Analyze Resume</button>
+        <button onclick="openSettingsModal()" style="background: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Settings</button>
+        <button onclick="openJobBoardsModal()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Job Boards</button>
+        <button onclick="openResumeModal()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Upload & Analyze Resume</button>
       </div>
     </header>
 
@@ -155,7 +155,7 @@
     <div id="settingsModal" class="modal">
       <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-          ⚙️ Search Settings
+          Search Settings
           <button class="modal-close" onclick="closeSettingsModal()">✕</button>
         </div>
         <div style="display: grid; gap: 15px;">
@@ -215,7 +215,7 @@
     <div id="jobBoardsModal" class="modal">
       <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-          🔍 Job Boards We're Searching
+          Job Boards We're Searching
           <button class="modal-close" onclick="closeJobBoardsModal()">✕</button>
         </div>
         <p id="jobBoardsIntro" style="color: #666; font-size: 14px; margin-bottom: 20px;">We automatically search these job boards daily.</p>
@@ -229,7 +229,7 @@
     <div id="resumeModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          📄 Upload Resume
+          Upload Resume
           <button class="modal-close" onclick="closeResumeModal()">✕</button>
         </div>
         <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Upload your resume to see job matches ranked by compatibility with your skills and experience.</p>
@@ -439,11 +439,11 @@
             </div>
 
             <div class="job-meta">
-              <span>📍 ${escapeHtml(job.location)}</span>
-              ${job.posted_date ? `<span>📅 ${new Date(job.posted_date * 1000).toLocaleDateString()}</span>` : ''}
+              <span>${escapeHtml(job.location)}</span>
+              ${job.posted_date ? `<span>${new Date(job.posted_date * 1000).toLocaleDateString()}</span>` : ''}
             </div>
 
-            ${job.salary_min ? `<div class="job-salary">💰 $${(job.salary_min/1000).toFixed(0)}k - $${(job.salary_max/1000).toFixed(0)}k</div>` : ''}
+            ${job.salary_min ? `<div class="job-salary">$${(job.salary_min/1000).toFixed(0)}k - $${(job.salary_max/1000).toFixed(0)}k</div>` : ''}
 
             ${matchReasons.length > 0 ? `
               <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 12px; color: #666;">
@@ -455,14 +455,14 @@
             <div class="job-actions">
               <a href="${escapeHtml(job.url)}" target="_blank">View Job</a>
               <button onclick="markApplied(${job.id})" class="btn-applied">
-                ${job.application_status === 'applied' ? '✓ Applied' : 'Mark Applied'}
+                ${job.application_status === 'applied' ? 'Applied' : 'Mark Applied'}
               </button>
               ${job.application_status !== 'applied' ? `
                 <button onclick="markNotAGoodFit(${job.id})" class="btn-notfit">
                   Not a Good Fit
                 </button>
                 <button onclick="markNoLongerAvailable(${job.id})" class="btn-unavailable">
-                  ${job.application_status === 'unavailable' ? '✓ Not Available' : 'Not Available'}
+                  ${job.application_status === 'unavailable' ? 'Not Available' : 'Not Available'}
                 </button>
               ` : ''}
             </div>
@@ -474,14 +474,14 @@
 
       if (appliedJobs.length > 0) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #27ae60; margin-bottom: 20px;">✓ Jobs Applied For</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: #27ae60; margin-bottom: 20px;">Jobs Applied For</h2>
           ${appliedJobs.map(renderJobCard).join('')}
         </div>`
       }
 
       if (notAGoodFitJobs.length > 0) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #e67e22; margin-bottom: 20px;">✗ Not a Good Fit</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: #e67e22; margin-bottom: 20px;">Not a Good Fit</h2>
           ${notAGoodFitJobs.map(renderJobCard).join('')}
         </div>`
       }
@@ -490,7 +490,7 @@
       const hiddenJobs = visibleJobs.filter(job => !isDesignerRole(job))
       if (hiddenJobs.length > 0 && showNonPriorityJobs) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #95a5a6;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #7f8c8d; margin-bottom: 10px;">🔍 Hidden - Non-Priority Jobs (${hiddenJobs.length})</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: #7f8c8d; margin-bottom: 10px;">Hidden - Non-Priority Jobs (${hiddenJobs.length})</h2>
           <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">These jobs don't match your priority keywords. Showing in case they're interesting to you.</p>
           <div style="display: grid; gap: 15px;">
             ${hiddenJobs.slice(0, 20).map(job => `
@@ -736,7 +736,7 @@
       priorityJobKeywords = priorityKeywords.split(',').map(k => k.trim().toLowerCase())
 
       closeSettingsModal()
-      showError('✅ Settings saved! Search parameters updated.')
+      showError('Settings saved! Search parameters updated.')
       filterJobs()
     }
 
@@ -768,17 +768,17 @@
       // searching: false marks boards in the rotation whose scrapers are
       // currently broken (return 0 jobs until their selectors are fixed)
       const boards = [
-        { name: 'LinkedIn', emoji: '💼', url: 'linkedin.com', source: 'linkedin', searching: true },
-        { name: 'Dribbble', emoji: '🎨', url: 'dribbble.com', source: 'dribbble', searching: false },
-        { name: 'Authentic Jobs', emoji: '🎯', url: 'authenticjobs.com', source: 'authenticjobs', searching: false },
-        { name: 'UI/UX Jobs Board', emoji: '🖌️', url: 'uiuxjobsboard.com', source: 'uiuxjobsboard', searching: true },
-        { name: 'Remotive', emoji: '🛋️', url: 'remotive.com', source: 'remotive', searching: true },
-        { name: 'Smashing Magazine', emoji: '🍉', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine', searching: true },
-        { name: 'Remote Leaf', emoji: '🍃', url: 'remoteleaf.com', source: 'remoteleaf', searching: true },
-        { name: 'AIGA Design Careers', emoji: '🏛️', url: 'designcareers.aiga.org', source: 'aiga', searching: true },
-        { name: 'We Work Remotely', emoji: '🌍', url: 'weworkremotely.com', source: 'weworkremotely', searching: true },
-        { name: 'Working Nomads', emoji: '🧳', url: 'workingnomads.com', source: 'workingnomads', searching: true },
-        { name: 'Jobicy', emoji: '🚀', url: 'jobicy.com', source: 'jobicy', searching: true }
+        { name: 'LinkedIn', url: 'linkedin.com', source: 'linkedin', searching: true },
+        { name: 'Dribbble', url: 'dribbble.com', source: 'dribbble', searching: false },
+        { name: 'Authentic Jobs', url: 'authenticjobs.com', source: 'authenticjobs', searching: false },
+        { name: 'UI/UX Jobs Board', url: 'uiuxjobsboard.com', source: 'uiuxjobsboard', searching: true },
+        { name: 'Remotive', url: 'remotive.com', source: 'remotive', searching: true },
+        { name: 'Smashing Magazine', url: 'smashingmagazine.com/jobs', source: 'smashingmagazine', searching: true },
+        { name: 'Remote Leaf', url: 'remoteleaf.com', source: 'remoteleaf', searching: true },
+        { name: 'AIGA Design Careers', url: 'designcareers.aiga.org', source: 'aiga', searching: true },
+        { name: 'We Work Remotely', url: 'weworkremotely.com', source: 'weworkremotely', searching: true },
+        { name: 'Working Nomads', url: 'workingnomads.com', source: 'workingnomads', searching: true },
+        { name: 'Jobicy', url: 'jobicy.com', source: 'jobicy', searching: true }
       ]
 
       try {
@@ -807,14 +807,14 @@
           const searching = board.searching
           const enabled = !disabledSources.has(board.source)
           const badge = searching
-            ? '<span style="background: #e8f5e9; color: #27ae60; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">✓ Searching daily</span>'
-            : '<span style="background: #fdf2e9; color: #e67e22; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">⚠ Scraper broken</span>'
+            ? '<span style="background: #e8f5e9; color: #27ae60; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Searching daily</span>'
+            : '<span style="background: #fdf2e9; color: #e67e22; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Scraper broken</span>'
           return `
             <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: ${searching ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? '#27ae60' : '#e67e22'}; opacity: ${enabled ? '1' : '0.55'};">
               <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSource('${board.source}', this.checked)" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
               <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                  <div style="font-weight: 600; font-size: 15px;">${board.emoji} ${board.name}${badge}</div>
+                  <div style="font-weight: 600; font-size: 15px;">${board.name}${badge}</div>
                   <div style="font-size: 12px; color: #666; margin-top: 4px;">${board.url}</div>
                 </div>
                 <div style="text-align: right;">
@@ -875,7 +875,7 @@
 
       try {
         const statusEl = document.getElementById('resumeStatus')
-        statusEl.textContent = '⏳ Analyzing...'
+        statusEl.textContent = 'Analyzing...'
 
         const response = await fetch('/api/resume', {
           method: 'POST',
@@ -886,7 +886,7 @@
         const result = await response.json()
 
         if (result.success) {
-          statusEl.textContent = `✅ Resume analyzed! ${result.message}`
+          statusEl.textContent = `Resume analyzed! ${result.message}`
           document.getElementById('resumeText').value = ''
           setTimeout(() => {
             closeResumeModal()
