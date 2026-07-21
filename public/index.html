@@ -6,6 +6,14 @@
   <title>Search Party</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
+    /* A restrained accent palette: one primary plus three semantic tones,
+       all at a matching saturation so they sit well together. */
+    :root {
+      --primary: #2563eb;      --primary-dark: #1d4ed8;   --primary-soft: #eff6ff;
+      --success: #16a34a;      --success-dark: #15803d;   --success-soft: #f0fdf4;
+      --warning: #d97706;      --warning-dark: #b45309;   --warning-soft: #fffbeb;
+      --neutral: #64748b;      --neutral-dark: #475569;   --neutral-soft: #f1f5f9;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
 
@@ -23,8 +31,8 @@
     .modal-close:hover { color: #333; }
 
     .controls { padding: 20px 0; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .controls button { background: #0a66c2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; }
-    .controls button:hover { background: #085a9f; }
+    .controls button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .controls button:hover { background: var(--primary-dark); }
     .controls input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
     .filter-section { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
     .filter-label { font-size: 13px; color: #666; font-weight: 600; }
@@ -33,7 +41,7 @@
       width: 150px;
       height: 5px;
       border-radius: 3px;
-      background: linear-gradient(to right, #0a66c2 0%, #0a66c2 var(--value), #e0e0e0 var(--value), #e0e0e0 100%);
+      background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--value), #e0e0e0 var(--value), #e0e0e0 100%);
       outline: none;
       -webkit-appearance: none;
       padding: 0;
@@ -46,7 +54,7 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: #0a66c2;
+      background: var(--primary);
       cursor: pointer;
       border: none;
     }
@@ -55,7 +63,7 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: #0a66c2;
+      background: var(--primary);
       cursor: pointer;
       border: none;
     }
@@ -66,55 +74,55 @@
     }
 
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
-    .stat-card { background: rgba(10, 102, 194, 0.1); padding: 20px; border-radius: 8px; }
-    .stat-number { font-size: 32px; font-weight: bold; color: #0a66c2; }
+    .stat-card { background: var(--primary-soft); padding: 20px; border-radius: 8px; }
+    .stat-number { font-size: 32px; font-weight: bold; color: var(--primary); }
     .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
-    .stat-red { background: rgba(231, 76, 60, 0.1); }
-    .stat-red .stat-number { color: #e74c3c; }
-    .stat-green { background: rgba(39, 174, 96, 0.1); }
-    .stat-green .stat-number { color: #27ae60; }
-    .stat-orange { background: rgba(230, 126, 34, 0.1); }
-    .stat-orange .stat-number { color: #e67e22; }
-    .stat-grey { background: rgba(149, 165, 166, 0.1); }
-    .stat-grey .stat-number { color: #95a5a6; }
+    .stat-red { background: var(--neutral-soft); }
+    .stat-red .stat-number { color: var(--neutral); }
+    .stat-green { background: var(--success-soft); }
+    .stat-green .stat-number { color: var(--success); }
+    .stat-orange { background: var(--warning-soft); }
+    .stat-orange .stat-number { color: var(--warning); }
+    .stat-grey { background: var(--neutral-soft); }
+    .stat-grey .stat-number { color: var(--neutral); }
     .stat-card { cursor: pointer; transition: box-shadow 0.15s; }
     .stat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-    .stat-card.stat-selected { box-shadow: 0 0 0 2px #0a66c2 inset; }
-    .stat-red.stat-selected { box-shadow: 0 0 0 2px #e74c3c inset; }
-    .stat-green.stat-selected { box-shadow: 0 0 0 2px #27ae60 inset; }
-    .stat-orange.stat-selected { box-shadow: 0 0 0 2px #e67e22 inset; }
-    .stat-grey.stat-selected { box-shadow: 0 0 0 2px #95a5a6 inset; }
-    #statInfo { padding: 15px 20px; border-radius: 8px; margin: -15px 0 30px; font-size: 14px; line-height: 1.5; background: #fff; color: #444; border-left: 4px solid #0a66c2; }
+    .stat-card.stat-selected { box-shadow: 0 0 0 2px var(--primary) inset; }
+    .stat-red.stat-selected { box-shadow: 0 0 0 2px var(--neutral) inset; }
+    .stat-green.stat-selected { box-shadow: 0 0 0 2px var(--success) inset; }
+    .stat-orange.stat-selected { box-shadow: 0 0 0 2px var(--warning) inset; }
+    .stat-grey.stat-selected { box-shadow: 0 0 0 2px var(--neutral) inset; }
+    #statInfo { padding: 15px 20px; border-radius: 8px; margin: -15px 0 30px; font-size: 14px; line-height: 1.5; background: #fff; color: #444; border-left: 4px solid var(--primary); }
 
     .jobs-container { }
     .job-card { background: #fff; padding: 20px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #eee; transition: box-shadow 0.2s; }
     .job-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
     .job-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
-    .job-title { font-size: 18px; font-weight: bold; color: #0a66c2; }
+    .job-title { font-size: 18px; font-weight: bold; color: var(--primary); }
     .job-source { font-size: 12px; background: #f0f0f0; padding: 4px 8px; border-radius: 3px; }
 
     .job-company { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 5px; }
     .job-meta { font-size: 14px; color: #666; margin-bottom: 10px; }
     .job-meta span { margin-right: 20px; }
 
-    .job-salary { color: #27ae60; font-weight: 600; margin-top: 10px; }
+    .job-salary { color: var(--success); font-weight: 600; margin-top: 10px; }
 
     .job-actions { margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .job-actions a { display: inline-block; background: #0a66c2; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
-    .job-actions a:hover { background: #085a9f; }
+    .job-actions a { display: inline-block; background: var(--primary); color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
+    .job-actions a:hover { background: var(--primary-dark); }
     .job-actions button { border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; }
     .job-actions button:first-of-type { margin-left: auto; }
-    .btn-applied { background: #27ae60; color: white; }
-    .btn-applied:hover { background: #219150; }
-    .btn-notfit { background: #e67e22; color: white; }
-    .btn-notfit:hover { background: #cf6d17; }
-    .btn-unavailable { background: #dde3e8; color: #5d6d7e; }
-    .btn-unavailable:hover { background: #cbd4db; }
+    .btn-applied { background: var(--success); color: white; }
+    .btn-applied:hover { background: var(--success-dark); }
+    .btn-notfit { background: var(--warning); color: white; }
+    .btn-notfit:hover { background: var(--warning-dark); }
+    .btn-unavailable { background: var(--neutral-soft); color: var(--neutral-dark); }
+    .btn-unavailable:hover { background: #e2e8f0; }
 
     .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-    .status-saved { background: #e3f2fd; color: #0a66c2; }
-    .status-applied { background: #e8f5e9; color: #27ae60; }
+    .status-saved { background: var(--primary-soft); color: var(--primary); }
+    .status-applied { background: var(--success-soft); color: var(--success); }
 
     .loading { text-align: center; padding: 40px; color: #666; }
     .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
@@ -134,9 +142,9 @@
         <p>Find your next opportunity</p>
       </div>
       <div style="display: flex; gap: 10px;">
-        <button onclick="openSettingsModal()" style="background: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Settings</button>
-        <button onclick="openJobBoardsModal()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Job Boards</button>
-        <button onclick="openResumeModal()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Upload & Analyze Resume</button>
+        <button onclick="openSettingsModal()" style="background: var(--neutral-soft); color: var(--neutral-dark); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Settings</button>
+        <button onclick="openJobBoardsModal()" style="background: var(--neutral-soft); color: var(--neutral-dark); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Job Boards</button>
+        <button onclick="openResumeModal()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Upload & Analyze Resume</button>
       </div>
     </header>
 
@@ -206,7 +214,7 @@
             </div>
           </div>
 
-          <button onclick="saveSettings()" style="background: #27ae60; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px;">Save Settings</button>
+          <button onclick="saveSettings()" style="background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 10px;">Save Settings</button>
         </div>
       </div>
     </div>
@@ -234,7 +242,7 @@
         </div>
         <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Upload your resume to see job matches ranked by compatibility with your skills and experience.</p>
         <textarea id="resumeText" style="width: 100%; height: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: monospace; font-size: 12px; resize: vertical;" placeholder="Paste your resume text here..."></textarea>
-        <button onclick="uploadResume()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: 600;">Upload & Analyze</button>
+        <button onclick="uploadResume()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: 600;">Upload & Analyze</button>
         <span id="resumeStatus" style="margin-left: 15px; color: #666; font-size: 14px;"></span>
       </div>
     </div>
@@ -414,12 +422,12 @@
 
       const renderJobCard = (job) => {
         const matchScore = job.adjustedMatchScore !== undefined ? job.adjustedMatchScore : (job.match_score || 0)
-        const matchColor = matchScore >= 80 ? '#27ae60' : matchScore >= 60 ? '#f39c12' : matchScore >= 40 ? '#e67e22' : '#95a5a6'
+        const matchColor = matchScore >= 80 ? 'var(--success)' : matchScore >= 55 ? 'var(--warning)' : 'var(--neutral)'
         const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good' : matchScore >= 40 ? 'Fair' : 'New Job'
         const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
-        const nonPriorityIndicator = job.isPriority === false ? '<span style="background: #95a5a6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-Priority Match</span>' : ''
-        const unavailableIndicator = job.application_status === 'unavailable' ? '<span style="background: #7f8c8d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Not Available</span>' : ''
-        const foreignRemoteIndicator = job.isForeignRemote ? '<span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-US Remote</span>' : ''
+        const nonPriorityIndicator = job.isPriority === false ? '<span style="background: var(--neutral); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-Priority Match</span>' : ''
+        const unavailableIndicator = job.application_status === 'unavailable' ? '<span style="background: var(--neutral); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Not Available</span>' : ''
+        const foreignRemoteIndicator = job.isForeignRemote ? '<span style="background: var(--neutral); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-US Remote</span>' : ''
 
         return `
           <div class="job-card">
@@ -474,14 +482,14 @@
 
       if (appliedJobs.length > 0) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #27ae60; margin-bottom: 20px;">Jobs Applied For</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: var(--success); margin-bottom: 20px;">Jobs Applied For</h2>
           ${appliedJobs.map(renderJobCard).join('')}
         </div>`
       }
 
       if (notAGoodFitJobs.length > 0) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #e67e22; margin-bottom: 20px;">Not a Good Fit</h2>
+          <h2 style="font-size: 20px; font-weight: bold; color: var(--warning); margin-bottom: 20px;">Not a Good Fit</h2>
           ${notAGoodFitJobs.map(renderJobCard).join('')}
         </div>`
       }
@@ -489,18 +497,18 @@
       // Show hidden non-priority jobs if enabled
       const hiddenJobs = visibleJobs.filter(job => !isDesignerRole(job))
       if (hiddenJobs.length > 0 && showNonPriorityJobs) {
-        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #95a5a6;">
-          <h2 style="font-size: 20px; font-weight: bold; color: #7f8c8d; margin-bottom: 10px;">Hidden - Non-Priority Jobs (${hiddenJobs.length})</h2>
-          <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 14px;">These jobs don't match your priority keywords. Showing in case they're interesting to you.</p>
+        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--neutral);">
+          <h2 style="font-size: 20px; font-weight: bold; color: var(--neutral); margin-bottom: 10px;">Hidden - Non-Priority Jobs (${hiddenJobs.length})</h2>
+          <p style="color: var(--neutral); margin-bottom: 20px; font-size: 14px;">These jobs don't match your priority keywords. Showing in case they're interesting to you.</p>
           <div style="display: grid; gap: 15px;">
             ${hiddenJobs.slice(0, 20).map(job => `
-              <div style="padding: 12px; background: #ecf0f1; border-left: 4px solid #95a5a6; border-radius: 4px;">
+              <div style="padding: 12px; background: var(--neutral-soft); border-left: 4px solid var(--neutral); border-radius: 4px;">
                 <div style="font-weight: 600; color: #2c3e50;">${escapeHtml(job.title)}</div>
-                <div style="font-size: 13px; color: #7f8c8d;">${escapeHtml(job.company)} • ${escapeHtml(job.location)}</div>
-                ${job.match_score > 0 ? `<div style="font-size: 13px; color: #95a5a6; margin-top: 4px;">${job.match_score}% Match</div>` : ''}
+                <div style="font-size: 13px; color: var(--neutral);">${escapeHtml(job.company)} • ${escapeHtml(job.location)}</div>
+                ${job.match_score > 0 ? `<div style="font-size: 13px; color: var(--neutral); margin-top: 4px;">${job.match_score}% Match</div>` : ''}
               </div>
             `).join('')}
-            ${hiddenJobs.length > 20 ? `<div style="padding: 12px; text-align: center; color: #7f8c8d; font-size: 13px;">... and ${hiddenJobs.length - 20} more</div>` : ''}
+            ${hiddenJobs.length > 20 ? `<div style="padding: 12px; text-align: center; color: var(--neutral); font-size: 13px;">... and ${hiddenJobs.length - 20} more</div>` : ''}
           </div>
         </div>`
       }
@@ -609,27 +617,27 @@
 
     const STAT_INFO = {
       total: {
-        color: '#0a66c2',
+        color: 'var(--primary)',
         title: 'Total Jobs',
         text: 'Jobs currently shown in the list below: designer roles that match one of your search locations and meet the minimum match score. Change the slider or your settings and this number updates.'
       },
       hidden: {
-        color: '#e74c3c',
+        color: 'var(--neutral)',
         title: 'Hidden',
         text: 'Jobs found by the daily search but kept out of the main list — roles that don’t look like designer positions, plus any jobs below your minimum match score. Non-priority roles appear in the "Hidden - Non-Priority Jobs" section at the very bottom of the page.'
       },
       applied: {
-        color: '#27ae60',
+        color: 'var(--success)',
         title: 'Applications',
         text: 'Jobs you’ve marked with the "Mark Applied" button. They stay in the "Jobs Applied For" section at the bottom of the list so you can track where you’ve applied.'
       },
       notfit: {
-        color: '#e67e22',
+        color: 'var(--warning)',
         title: 'Not a Good Fit',
         text: 'Jobs you’ve dismissed with the "Not a Good Fit" button — wrong role, seniority, salary, or just not for you. They move out of the main list into the "Not a Good Fit" section at the bottom.'
       },
       unavailable: {
-        color: '#95a5a6',
+        color: 'var(--neutral)',
         title: 'Not Available',
         text: 'Jobs you’ve marked "Not Available" because the listing was taken down or the position was filled before you could apply. They’re kept in the "Not a Good Fit" section at the bottom with a "Not Available" badge.'
       }
@@ -807,10 +815,10 @@
           const searching = board.searching
           const enabled = !disabledSources.has(board.source)
           const badge = searching
-            ? '<span style="background: #e8f5e9; color: #27ae60; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Searching daily</span>'
-            : '<span style="background: #fdf2e9; color: #e67e22; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Scraper broken</span>'
+            ? '<span style="background: var(--success-soft); color: var(--success); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Searching daily</span>'
+            : '<span style="background: var(--warning-soft); color: var(--warning); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">Scraper broken</span>'
           return `
-            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: ${searching ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? '#27ae60' : '#e67e22'}; opacity: ${enabled ? '1' : '0.55'};">
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: ${searching ? 'var(--success-soft)' : 'var(--neutral-soft)'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? 'var(--success)' : 'var(--warning)'}; opacity: ${enabled ? '1' : '0.55'};">
               <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSource('${board.source}', this.checked)" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
               <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -818,7 +826,7 @@
                   <div style="font-size: 12px; color: #666; margin-top: 4px;">${board.url}</div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 20px; font-weight: bold; color: ${count > 0 ? '#27ae60' : '#999'};">${count}</div>
+                  <div style="font-size: 20px; font-weight: bold; color: ${count > 0 ? 'var(--success)' : '#999'};">${count}</div>
                   <div style="font-size: 11px; color: #999;">job${count !== 1 ? 's' : ''}</div>
                 </div>
               </div>
