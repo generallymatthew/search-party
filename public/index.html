@@ -458,7 +458,7 @@
             ${job.salary_min ? `<div class="job-salary">$${(job.salary_min/1000).toFixed(0)}k - $${(job.salary_max/1000).toFixed(0)}k</div>` : ''}
 
             ${matchReasons.length > 0 ? `
-              <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 12px; color: #666;">
+              <div style="margin: 10px 0; font-size: 12px; color: #666;">
                 <strong>Why it matches:</strong><br>
                 ${matchReasons.map(r => `• ${r}`).join('<br>')}
               </div>
