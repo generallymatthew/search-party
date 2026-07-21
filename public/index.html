@@ -276,6 +276,10 @@
     let minMatchScoreFilter = 0
     let demotionPenaltyAmount = 20
     let showNonPriorityJobs = true
+    // Job boards the user has unchecked in the Job Boards modal; their jobs
+    // are hidden from the list. Storing the *disabled* set means boards added
+    // later default to on.
+    let disabledSources = new Set()
     let priorityJobKeywords = ['ux designer', 'experience designer', 'user experience designer', 'ux/ui', 'product designer', 'ui designer']
 
     async function loadJobs() {
@@ -287,6 +291,11 @@
         }
         demotionPenaltyAmount = parseInt(localStorage.getItem('demotionPenalty')) || 20
         showNonPriorityJobs = localStorage.getItem('showNonPriority') !== 'false'
+        try {
+          disabledSources = new Set(JSON.parse(localStorage.getItem('disabledSources') || '[]'))
+        } catch (e) {
+          disabledSources = new Set()
+        }
 
         const response = await fetch('/api/jobs?limit=1000&offset=0')
         currentJobs = await response.json()
@@ -301,6 +310,9 @@
 
     function renderJobs() {
       const container = document.getElementById('jobs')
+
+      // Hide jobs from boards the user has toggled off in the Job Boards modal
+      const visibleJobs = currentJobs.filter(job => !disabledSources.has(job.source))
 
       // Get user's search locations
       const locationsStr = localStorage.getItem('locations') || 'remote, Raleigh NC, Durham NC, Chapel Hill NC'
@@ -348,7 +360,7 @@
       }
 
       // Apply filters - match score, location, AND must be a designer role
-      let filteredJobs = currentJobs.filter(job => {
+      let filteredJobs = visibleJobs.filter(job => {
         const matchScore = job.match_score || 0
         const hasMatchScore = matchScore >= minMatchScoreFilter
         const hasMatchingLocation = matchesUserLocation(job.location)
@@ -378,8 +390,8 @@
       })
 
       // Update stats based on filtered jobs (designer jobs only)
-      const designerJobs = currentJobs.filter(job => isDesignerRole(job))
-      const hiddenByDesignerFilter = currentJobs.length - designerJobs.length
+      const designerJobs = visibleJobs.filter(job => isDesignerRole(job))
+      const hiddenByDesignerFilter = visibleJobs.length - designerJobs.length
       const hiddenByMatchScore = designerJobs.length - filteredJobs.length
       const totalHidden = hiddenByDesignerFilter + hiddenByMatchScore
 
@@ -475,7 +487,7 @@
       }
 
       // Show hidden non-priority jobs if enabled
-      const hiddenJobs = currentJobs.filter(job => !isDesignerRole(job))
+      const hiddenJobs = visibleJobs.filter(job => !isDesignerRole(job))
       if (hiddenJobs.length > 0 && showNonPriorityJobs) {
         html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #95a5a6;">
           <h2 style="font-size: 20px; font-weight: bold; color: #7f8c8d; margin-bottom: 10px;">🔍 Hidden - Non-Priority Jobs (${hiddenJobs.length})</h2>
@@ -742,6 +754,16 @@
       renderJobs()
     }
 
+    function toggleSource(source, checked) {
+      if (checked) {
+        disabledSources.delete(source)
+      } else {
+        disabledSources.add(source)
+      }
+      localStorage.setItem('disabledSources', JSON.stringify([...disabledSources]))
+      renderJobs()
+    }
+
     async function loadJobBoardStats() {
       // searching: false marks boards in the rotation whose scrapers are
       // currently broken (return 0 jobs until their selectors are fixed)
@@ -768,7 +790,7 @@
         // Show which roles and locations the daily search covers
         const titles = (config.jobTitle || '').split(',').map(t => t.trim()).filter(Boolean)
         document.getElementById('jobBoardsIntro').textContent =
-          `We automatically search these job boards daily for ${titles.join(', ')} roles in: ${(config.locations || []).join(', ')}.`
+          `We automatically search these job boards daily for ${titles.join(', ')} roles in: ${(config.locations || []).join(', ')}. Uncheck a board to hide its jobs from the list.`
 
         const boardStats = {}
         boards.forEach(b => boardStats[b.source] = 0)
@@ -783,12 +805,14 @@
         const html = boards.map(board => {
           const count = boardStats[board.source] || 0
           const searching = board.searching
+          const enabled = !disabledSources.has(board.source)
           const badge = searching
             ? '<span style="background: #e8f5e9; color: #27ae60; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">✓ Searching daily</span>'
             : '<span style="background: #fdf2e9; color: #e67e22; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">⚠ Scraper broken</span>'
           return `
-            <div style="background: ${searching ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? '#27ae60' : '#e67e22'};">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: ${searching ? '#e8f5e9' : '#f5f5f5'}; padding: 15px; border-radius: 5px; border-left: 4px solid ${searching ? '#27ae60' : '#e67e22'}; opacity: ${enabled ? '1' : '0.55'};">
+              <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSource('${board.source}', this.checked)" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
+              <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                   <div style="font-weight: 600; font-size: 15px;">${board.emoji} ${board.name}${badge}</div>
                   <div style="font-size: 12px; color: #666; margin-top: 4px;">${board.url}</div>
@@ -798,7 +822,7 @@
                   <div style="font-size: 11px; color: #999;">job${count !== 1 ? 's' : ''}</div>
                 </div>
               </div>
-            </div>
+            </label>
           `
         }).join('')
 
