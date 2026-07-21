@@ -148,8 +148,6 @@
         <div class="filter-label">Minimum Match Score:</div>
         <input type="range" id="matchScoreFilter" min="0" max="100" value="0" style="width: 150px;" onchange="filterJobs()">
         <span id="matchScoreValue" style="font-size: 13px; color: #666; min-width: 40px;">0%</span>
-
-        <button onclick="toggleHideLowMatches()" id="toggleHideBtn" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 12px;">Hide Low Matches</button>
       </div>
     </div>
 
@@ -276,7 +274,6 @@
   <script>
     let currentJobs = []
     let minMatchScoreFilter = 0
-    let hideLowMatches = false
     let demotionPenaltyAmount = 20
     let showNonPriorityJobs = true
     let priorityJobKeywords = ['ux designer', 'experience designer', 'user experience designer', 'ux/ui', 'product designer', 'ui designer']
@@ -329,6 +326,19 @@
         return priorityJobKeywords.some(keyword => titleLower.includes(keyword) || companyLower.includes(keyword))
       }
 
+      // A job is "non-US remote" when it's remote but tied to a specific
+      // country/region other than the US. Worldwide/anywhere postings count
+      // as US-accessible, and local (non-remote) jobs are unaffected.
+      function isForeignRemote(job) {
+        const loc = job.location.toLowerCase()
+        if (!loc.includes('remote')) return false
+        const usOrWorldwide = ['united states', 'usa', 'america', 'anywhere', 'worldwide', 'global']
+        if (usOrWorldwide.some(k => loc.includes(k))) return false
+        // "Remote" with no country/region qualifier could be US — leave it be
+        const qualifier = loc.replace(/remote/g, '').replace(/[^a-z]/g, '')
+        return qualifier.length > 0
+      }
+
       // Helper function to check if job title or company contains any designer keywords
       function isDesignerRole(job) {
         const titleLower = job.title.toLowerCase()
@@ -351,13 +361,18 @@
         ...job,
         originalMatchScore: job.match_score,
         isPriority: isPriorityRole(job),
+        isForeignRemote: isForeignRemote(job),
         adjustedMatchScore: isPriorityRole(job) ? job.match_score : Math.max(0, (job.match_score || 0) - demotionPenaltyAmount)
       }))
 
-      // Sort: Priority roles first, then by adjusted match score descending
+      // Sort: priority roles first, then US-accessible before non-US remote,
+      // then by adjusted match score descending
       filteredJobs.sort((a, b) => {
         if (a.isPriority !== b.isPriority) {
           return a.isPriority ? -1 : 1
+        }
+        if (a.isForeignRemote !== b.isForeignRemote) {
+          return a.isForeignRemote ? 1 : -1
         }
         return b.adjustedMatchScore - a.adjustedMatchScore
       })
@@ -392,12 +407,13 @@
         const matchReasons = job.match_reasons ? JSON.parse(job.match_reasons) : []
         const nonPriorityIndicator = job.isPriority === false ? '<span style="background: #95a5a6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-Priority Match</span>' : ''
         const unavailableIndicator = job.application_status === 'unavailable' ? '<span style="background: #7f8c8d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Not Available</span>' : ''
+        const foreignRemoteIndicator = job.isForeignRemote ? '<span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Non-US Remote</span>' : ''
 
         return `
           <div class="job-card">
             <div class="job-header">
               <div>
-                <div class="job-title">${escapeHtml(job.title)}${nonPriorityIndicator}${unavailableIndicator}</div>
+                <div class="job-title">${escapeHtml(job.title)}${nonPriorityIndicator}${foreignRemoteIndicator}${unavailableIndicator}</div>
                 <div class="job-company">${escapeHtml(job.company)}</div>
               </div>
               <div style="text-align: right;">
@@ -506,7 +522,8 @@
 
         if (config.lastSearch) {
           const date = new Date(config.lastSearch)
-          document.getElementById('lastSearch').textContent = `Last search: ${date.toLocaleString()}`
+          document.getElementById('lastSearch').textContent = `Last search: ${timeAgo(date)}`
+          document.getElementById('lastSearch').title = date.toLocaleString()
         }
       } catch (error) {
         console.error('Failed to load config:', error)
@@ -640,6 +657,19 @@
       return div.innerHTML
     }
 
+    // "just now" / "N minutes ago" under an hour, hours through the first
+    // 24 hours, then days
+    function timeAgo(date) {
+      const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
+      if (seconds < 60) return 'just now'
+      const minutes = Math.floor(seconds / 60)
+      if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`
+      const hours = Math.floor(minutes / 60)
+      if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`
+      const days = Math.floor(hours / 24)
+      return `${days} day${days !== 1 ? 's' : ''} ago`
+    }
+
     function openResumeModal() {
       document.getElementById('resumeModal').classList.add('active')
     }
@@ -695,14 +725,6 @@
 
       closeSettingsModal()
       showError('✅ Settings saved! Search parameters updated.')
-      filterJobs()
-    }
-
-    function toggleHideLowMatches() {
-      hideLowMatches = !hideLowMatches
-      const btn = document.getElementById('toggleHideBtn')
-      btn.textContent = hideLowMatches ? '✓ Hiding Low Matches' : 'Hide Low Matches'
-      btn.style.background = hideLowMatches ? '#27ae60' : '#e74c3c'
       filterJobs()
     }
 
