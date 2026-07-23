@@ -151,6 +151,31 @@
       </div>
     </header>
 
+    <div id="stats" class="stats">
+      <div class="stat-card" onclick="toggleStatInfo('total', this)">
+        <div class="stat-number" id="statTotal">0</div>
+        <div class="stat-label">Total Jobs</div>
+      </div>
+      <div class="stat-card stat-red" onclick="toggleStatInfo('hidden', this)">
+        <div class="stat-number" id="statHidden">0</div>
+        <div class="stat-label">Hidden</div>
+      </div>
+      <div class="stat-card stat-green" onclick="toggleStatInfo('applied', this)">
+        <div class="stat-number" id="statApplied">0</div>
+        <div class="stat-label">Applications</div>
+      </div>
+      <div class="stat-card stat-orange" onclick="toggleStatInfo('notfit', this)">
+        <div class="stat-number" id="statNotFit">0</div>
+        <div class="stat-label">Not a Good Fit</div>
+      </div>
+      <div class="stat-card stat-grey" onclick="toggleStatInfo('unavailable', this)">
+        <div class="stat-number" id="statUnavailable">0</div>
+        <div class="stat-label">Not Available</div>
+      </div>
+    </div>
+
+    <div id="statInfo" style="display: none;"></div>
+
     <div class="controls">
       <button onclick="searchNow()">Search Now</button>
       <span id="lastSearch" style="color: #666; font-size: 14px;"></span>
@@ -251,31 +276,6 @@
     </div>
 
     <div id="error" style="display: none;" class="error"></div>
-
-    <div id="stats" class="stats">
-      <div class="stat-card" onclick="toggleStatInfo('total', this)">
-        <div class="stat-number" id="statTotal">0</div>
-        <div class="stat-label">Total Jobs</div>
-      </div>
-      <div class="stat-card stat-red" onclick="toggleStatInfo('hidden', this)">
-        <div class="stat-number" id="statHidden">0</div>
-        <div class="stat-label">Hidden</div>
-      </div>
-      <div class="stat-card stat-green" onclick="toggleStatInfo('applied', this)">
-        <div class="stat-number" id="statApplied">0</div>
-        <div class="stat-label">Applications</div>
-      </div>
-      <div class="stat-card stat-orange" onclick="toggleStatInfo('notfit', this)">
-        <div class="stat-number" id="statNotFit">0</div>
-        <div class="stat-label">Not a Good Fit</div>
-      </div>
-      <div class="stat-card stat-grey" onclick="toggleStatInfo('unavailable', this)">
-        <div class="stat-number" id="statUnavailable">0</div>
-        <div class="stat-label">Not Available</div>
-      </div>
-    </div>
-
-    <div id="statInfo" style="display: none;"></div>
 
     <div id="jobs" class="jobs-container">
       <div class="loading">Loading jobs...</div>
