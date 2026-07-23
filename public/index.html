@@ -485,14 +485,14 @@
       let html = notAppliedJobs.map(renderJobCard).join('')
 
       if (appliedJobs.length > 0) {
-        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+        html += `<div id="applied-section" style="margin-top: 40px; padding: 30px 20px; background: var(--success-soft); border-top: 2px solid var(--success); border-radius: 8px;">
           <h2 style="font-size: 20px; font-weight: bold; color: var(--success-ink); margin-bottom: 20px;">Jobs Applied For</h2>
           ${appliedJobs.map(renderJobCard).join('')}
         </div>`
       }
 
       if (notAGoodFitJobs.length > 0) {
-        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+        html += `<div id="notfit-section" style="margin-top: 40px; padding: 30px 20px; background: var(--warning-soft); border-top: 2px solid var(--warning); border-radius: 8px;">
           <h2 style="font-size: 20px; font-weight: bold; color: var(--warning); margin-bottom: 20px;">Not a Good Fit</h2>
           ${notAGoodFitJobs.map(renderJobCard).join('')}
         </div>`
@@ -501,7 +501,7 @@
       // Show hidden non-priority jobs if enabled
       const hiddenJobs = visibleJobs.filter(job => !isDesignerRole(job))
       if (hiddenJobs.length > 0 && showNonPriorityJobs) {
-        html += `<div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--neutral);">
+        html += `<div id="hidden-section" style="margin-top: 40px; padding: 30px 20px; background: var(--neutral-soft); border-top: 2px solid var(--neutral); border-radius: 8px;">
           <h2 style="font-size: 20px; font-weight: bold; color: var(--neutral); margin-bottom: 10px;">Hidden - Non-Priority Jobs (${hiddenJobs.length})</h2>
           <p style="color: var(--neutral); margin-bottom: 20px; font-size: 14px;">These jobs don't match your priority keywords. Showing in case they're interesting to you.</p>
           <div style="display: grid; gap: 15px;">
@@ -666,6 +666,14 @@
       panel.style.borderLeftColor = info.color
       panel.innerHTML = `<strong style="color: ${info.color};">${info.title}</strong> — ${info.text}`
       panel.style.display = 'block'
+
+      // Scroll to the corresponding section if it exists
+      const sectionMap = { 'applied': 'applied-section', 'notfit': 'notfit-section', 'unavailable': 'hidden-section' }
+      const sectionId = sectionMap[key]
+      if (sectionId) {
+        const section = document.getElementById(sectionId)
+        if (section) setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+      }
     }
 
     function showError(message) {
